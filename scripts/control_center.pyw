@@ -92,6 +92,8 @@ class App(tk.Tk):
         tk.Label(head, text="F", bg=ACCENT, fg=BG, font=(FONT, 11, "bold"), width=2).pack(side="left", padx=(0, 10))
         tk.Label(head, text="FLOW KIT", bg=BG, fg=TEXT, font=(FONT, 11, "bold")).pack(side="left")
         tk.Label(head, text="control center", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
+        self.stop_all_btn = button(head, "■  Stop all", self.stop_all, bg=CARD, fg=RED, width=10, bold=True)
+        self.stop_all_btn.pack(side="right", padx=(6, 0))
         self.start_all_btn = button(head, "▶  Start all", self.start_all, bg=ACCENT, fg=BG, width=11, bold=True)
         self.start_all_btn.pack(side="right")
 
@@ -127,21 +129,27 @@ class App(tk.Tk):
             if pid_on_port(port) is None:
                 start(name, cmd())
 
+    def stop_all(self):
+        for _, port, *_ in self.rows:
+            stop(port)
+
     def restart(self, name, port, cmd):
         stop(port)
         self.after(1500, lambda: start(name, cmd()))
 
     def tick(self):
-        all_up = True
+        all_up, any_up = True, False
         for name, port, cmd, dot, state, btn in self.rows:
             up = pid_on_port(port) is not None
             all_up &= up
+            any_up |= up
             dot.config(fg=GREEN if up else RED)
             state.config(text=f"localhost:{port}  ·  {'running' if up else 'stopped'}", fg=GREEN if up else MUTED)
             btn.config(text="Stop" if up else "Start", fg=RED if up else GREEN,
                        command=(lambda p=port: stop(p)) if up else (lambda n=name, c=cmd: start(n, c())))
         self.start_all_btn.config(state="disabled" if all_up else "normal", bg=BORDER if all_up else ACCENT,
                                   fg=MUTED if all_up else BG)
+        self.stop_all_btn.config(state="normal" if any_up else "disabled", fg=RED if any_up else MUTED)
         h = health()
         if h is None:
             self.ext_dot.config(fg=MUTED); self.ext.config(text="API not answering yet", fg=MUTED)
