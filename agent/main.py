@@ -62,9 +62,16 @@ async def ws_handler(websocket):
 
 async def run_ws_server():
     """Run WebSocket server for extension connections."""
-    async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
-        logger.info("WebSocket server listening on ws://%s:%d", WS_HOST, WS_PORT)
-        await asyncio.Future()  # run forever
+    try:
+        async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
+            logger.info("WebSocket server listening on ws://%s:%d", WS_HOST, WS_PORT)
+            await asyncio.Future()  # run forever
+    except OSError as e:
+        # Bind failure used to die silently inside the task; the extension then
+        # connects to whatever holds the port (e.g. Chrome DevTools on 9222).
+        logger.error("WebSocket server failed to bind ws://%s:%d: %s — "
+                     "free the port (netstat -ano | findstr :%d) or set WS_PORT",
+                     WS_HOST, WS_PORT, e, WS_PORT)
 
 
 # ─── FastAPI App ─────────────────────────────────────────────
