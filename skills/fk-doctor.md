@@ -189,6 +189,7 @@ When the user describes a symptom in plain language, map it here first.
 | Problem | Solution |
 |---------|----------|
 | Extension shows "Agent disconnected" | Start `python -m agent.main` |
+| `extension_connected: false` while `/health` is 200 and the log says `WebSocket server failed to bind` (or never says `WebSocket server listening`) | Port 9222 is taken — usually Chrome running with DevTools remote debugging (`%LOCALAPPDATA%\Google\Chrome\User Data\DevToolsActivePort` says `9222`) | Quit Chrome completely and reopen it normally, restart the agent, reload the extension. Or set `WS_PORT` and change `AGENT_WS_URL` in `extension/background.js` to match |
 | Extension shows "No token" | Expected — there is no bearer any more. Not a fault |
 | `CAPTCHA_FAILED: NO_FLOW_TAB` | Open `https://flow.google.com/` — and check the extension is v0.3.0+, older builds only matched the dead labs.google URL and could not see the tab that was right there |
 | 403 `MODEL_ACCESS_DENIED` | Tier mismatch — `GET /api/flow/credits`, downgrade model in `models.json` via `/fk-change-model` |
