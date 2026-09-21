@@ -239,6 +239,28 @@ async def list_all(status: str = None):
     return [repo._row_to_project(r) for r in rows]
 
 
+_PROGRESS_SQL = """
+SELECT v.project_id,
+       COUNT(*) AS total,
+       SUM(CASE WHEN (CASE WHEN s.vertical_image_status != 'PENDING' THEN s.vertical_image_status ELSE s.horizontal_image_status END) = 'COMPLETED' THEN 1 ELSE 0 END) AS image,
+       SUM(CASE WHEN (CASE WHEN s.vertical_video_status != 'PENDING' THEN s.vertical_video_status ELSE s.horizontal_video_status END) = 'COMPLETED' THEN 1 ELSE 0 END) AS video,
+       SUM(CASE WHEN (CASE WHEN s.vertical_upscale_status != 'PENDING' THEN s.vertical_upscale_status ELSE s.horizontal_upscale_status END) = 'COMPLETED' THEN 1 ELSE 0 END) AS upscale
+FROM scene s JOIN video v ON v.id = s.video_id
+GROUP BY v.project_id
+"""
+
+
+@router.get("/progress")
+async def progress():
+    """Per-project scene-stage completion in one query, for the project list cards.
+    Mirrors dashboard/src/lib/stageStats.ts sceneStageStatus (vertical wins unless PENDING)."""
+    from agent.db.schema import get_db
+    db = await get_db()
+    cur = await db.execute(_PROGRESS_SQL)
+    return {r["project_id"]: {"total": r["total"], "image": r["image"], "video": r["video"], "upscale": r["upscale"]}
+            for r in await cur.fetchall()}
+
+
 @router.get("/{pid}", response_model=Project)
 async def get(pid: str):
     repo = _get_repo()

@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs'
 
 type FilterTab = 'ACTIVE' | 'ARCHIVED' | 'ALL'
+type Progress = { total: number; image: number; video: number; upscale: number }
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString()
@@ -21,7 +22,7 @@ function TierBadge({ tier, t }: { tier: string | null; t: (key: TranslationKey) 
   return <Badge variant={isTwo ? 'default' : 'secondary'}>{isTwo ? t('projects.tier2') : t('projects.tier1')}</Badge>
 }
 
-function ProjectCard({ project, onClick, t }: { project: Project; onClick: () => void; t: (key: TranslationKey, params?: Record<string, string | number>) => string }) {
+function ProjectCard({ project, progress, onClick, t }: { project: Project; progress?: Progress; onClick: () => void; t: (key: TranslationKey, params?: Record<string, string | number>) => string }) {
   return (
     <Card className="py-4 gap-3 h-full cursor-pointer transition-opacity hover:opacity-90" onClick={onClick}>
       <CardHeader>
@@ -38,6 +39,16 @@ function ProjectCard({ project, onClick, t }: { project: Project; onClick: () =>
           {project.material && <Badge variant="outline">{project.material}</Badge>}
           <Badge variant="outline">{project.status}</Badge>
         </div>
+        {progress && progress.total > 0 && (
+          <div className="mt-2 text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>
+            {(['image', 'video', 'upscale'] as const).map((k, i) => (
+              <span key={k} style={{ color: progress[k] === progress.total ? 'var(--green)' : undefined }}>
+                {i > 0 && <span style={{ color: 'var(--muted)' }}> · </span>}
+                {t(`projects.progress.${k}` as TranslationKey)} {progress[k]}/{progress.total}
+              </span>
+            ))}
+          </div>
+        )}
       </CardContent>
       <CardFooter>
         <span className="text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>{t('projects.footer', { date: formatDate(project.created_at), id: project.id.slice(0, 8) })}</span>
@@ -51,7 +62,9 @@ export default function ProjectsPage() {
   const { id } = useParams<{ id?: string }>()
   const navigate = useNavigate()
   const [tab, setTab] = useState<FilterTab>('ACTIVE')
+  const [query, setQuery] = useState('')
   const [projects, setProjects] = useState<Project[]>([])
+  const [progress, setProgress] = useState<Record<string, Progress>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -59,6 +72,7 @@ export default function ProjectsPage() {
       .then(setProjects)
       .catch(console.error)
       .finally(() => setLoading(false))
+    fetchAPI<Record<string, Progress>>('/api/projects/progress').then(setProgress).catch(console.error)
   }, [])
 
   // If there's an :id param, show detail page
@@ -66,10 +80,11 @@ export default function ProjectsPage() {
     return <ProjectDetailPage projectId={id} onBack={() => navigate('/projects')} />
   }
 
-  const filtered = projects.filter(p => {
-    if (tab === 'ALL') return p.status !== 'DELETED'
-    return p.status === tab
-  })
+  const q = query.trim().toLowerCase()
+  const filtered = projects
+    .filter(p => (tab === 'ALL' ? p.status !== 'DELETED' : p.status === tab))
+    .filter(p => !q || p.name.toLowerCase().includes(q) || (p.description ?? '').toLowerCase().includes(q) || p.id.startsWith(q))
+    .sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''))
 
   return (
     <div className="flex flex-col gap-4">
@@ -81,6 +96,14 @@ export default function ProjectsPage() {
             <TabsTrigger value="ALL">{t('projects.tab.all')}</TabsTrigger>
           </TabsList>
         </Tabs>
+        <input
+          type="search"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder={t('projects.search')}
+          className="px-2.5 py-1.5 rounded border text-xs outline-none w-64"
+          style={{ background: 'var(--card)', borderColor: 'var(--border)', color: 'var(--text)' }}
+        />
         <span className="ml-auto text-[11px]" style={{ color: 'var(--muted)' }}>{t('projects.count', { n: filtered.length })}</span>
       </div>
 
@@ -91,7 +114,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {filtered.map(p => (
-            <ProjectCard key={p.id} project={p} onClick={() => navigate(`/projects/${p.id}`)} t={t} />
+            <ProjectCard key={p.id} project={p} progress={progress[p.id]} onClick={() => navigate(`/projects/${p.id}`)} t={t} />
           ))}
         </div>
       )}
