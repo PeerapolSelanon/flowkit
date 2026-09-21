@@ -159,7 +159,7 @@ A local React dashboard (`dashboard/`) for monitoring and driving the pipeline �
 ```
 ┌──────────────────┐     WebSocket      ┌──────────────────────┐     ┌──────────────────┐
 │  Python Agent    │◄──────────────────►│  Chrome Extension     │────►│  flow.google.com │
-│  (FastAPI+SQLite)│    localhost:9222  │  (MV3 Service Worker) │     │  (signed-in tab) │
+│  (FastAPI+SQLite)│    localhost:9231  │  (MV3 Service Worker) │     │  (signed-in tab) │
 │                  │                    │                       │     │                  │
 │  - REST API :8100│  ── envelopes ──►  │  - reCAPTCHA mint     │     │  batchexecute    │
 │  - Queue worker  │  ◄── responses ──  │  - runs the RPC in    │     │  cookie + `at`   │
@@ -699,7 +699,7 @@ Materials control both entity `image_prompt` style and scene `scene_prefix`. Exa
 | `API_HOST` | `127.0.0.1` | REST API bind address |
 | `API_PORT` | `8100` | REST API port |
 | `WS_HOST` | `127.0.0.1` | WebSocket server bind |
-| `WS_PORT` | `9222` | WebSocket server port |
+| `WS_PORT` | `9231` | WebSocket server port |
 | `POLL_INTERVAL` | `5` | Worker poll interval (seconds) |
 | `MAX_RETRIES` | `5` | Max retries per request |
 | `VIDEO_POLL_TIMEOUT` | `420` | Video gen poll timeout (seconds) |

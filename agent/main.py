@@ -68,7 +68,7 @@ async def run_ws_server():
             await asyncio.Future()  # run forever
     except OSError as e:
         # Bind failure used to die silently inside the task; the extension then
-        # connects to whatever holds the port (e.g. Chrome DevTools on 9222).
+        # connects to whatever holds the port (9222, the old default, is Chrome DevTools).
         logger.error("WebSocket server failed to bind ws://%s:%d: %s — "
                      "free the port (netstat -ano | findstr :%d) or set WS_PORT",
                      WS_HOST, WS_PORT, e, WS_PORT)

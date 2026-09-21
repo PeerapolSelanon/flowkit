@@ -7,7 +7,7 @@ A **standalone** system (no Veogent dependency) that lets a local Python agent g
 ```
 ┌──────────────────┐     WebSocket      ┌──────────────────────┐
 │  Python Agent    │◄──────────────────►│  Chrome Extension     │
-│  (FastAPI+SQLite)│     localhost:9222  │  (MV3 Service Worker) │
+│  (FastAPI+SQLite)│     localhost:9231  │  (MV3 Service Worker) │
 │                  │                    │                       │
 │  - REST API      │  ── commands ──►   │  - Token capture      │
 │  - Queue worker  │  ◄── results ──    │  - reCAPTCHA solve    │
@@ -20,7 +20,7 @@ A **standalone** system (no Veogent dependency) that lets a local Python agent g
 
 ### Communication: Agent runs WS server, Extension connects as client
 - Chrome MV3 service workers **cannot** run WebSocket servers
-- Agent runs WS server on `localhost:9222`
+- Agent runs WS server on `localhost:9231`
 - Extension connects to agent's WS server on startup + auto-reconnect
 - Protocol: JSON messages with `{id, method, params}` → `{id, result/error}`
 
