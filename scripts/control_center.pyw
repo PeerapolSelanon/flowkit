@@ -17,8 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 LOGS = ROOT / "scripts" / "logs"
 LOGS.mkdir(exist_ok=True)
 
-PY = ROOT / "venv" / "Scripts" / "python.exe"
-PY = str(PY) if PY.exists() else sys.executable.replace("pythonw.exe", "python.exe")
+VENV_PY = ROOT / "venv" / "Scripts" / "python.exe"
+# Same as .claude/launch.json when there is no venv: uv provisions 3.11 + requirements.txt
+PY = f'"{VENV_PY}"' if VENV_PY.exists() else "uv run --python 3.11 --with-requirements requirements.txt python"
 NPM = shutil.which("npm.cmd") or shutil.which("npm") or "npm"
 
 # Same palette as dashboard/src/index.css
@@ -37,7 +38,7 @@ def dashboard_cmd():
 
 SERVERS = [
     # name, port, command (built lazily so first-run npm install is detected at click time), url to open
-    ("API server", 8100, lambda: f'"{PY}" -m agent.main', "http://127.0.0.1:8100/health"),
+    ("API server", 8100, lambda: f'{PY} -m agent.main', "http://127.0.0.1:8100/health"),
     ("Dashboard", 5173, dashboard_cmd, "http://localhost:5173"),
 ]
 

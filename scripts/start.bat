@@ -6,7 +6,7 @@ setlocal
 cd /d "%~dp0.."
 
 set PY=venv\Scripts\python.exe
-if not exist "%PY%" set PY=python
+if not exist "%PY%" set PY=uv run --python 3.11 --with-requirements requirements.txt python
 
 netstat -ano | findstr /r /c:":8100 .*LISTENING" >nul
 if errorlevel 1 (
