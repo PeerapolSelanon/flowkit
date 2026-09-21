@@ -4,6 +4,7 @@ chunking into contact sheets. No mocking of ffmpeg subprocess calls here —
 these tests generate a real short synthetic video and verify the chunking
 math against real ffmpeg output.
 """
+import os
 import shutil
 import subprocess
 import tempfile
@@ -84,12 +85,11 @@ class TestCreateContactSheetsChunking:
             for sheet_idx, start in enumerate(range(0, 20, per_sheet)):
                 expected_chunk = expected_selection[start:start + per_sheet]
                 chunk_dir = Path(out_dir) / f"_chunk_{sheet_idx:02d}"
-                symlinks = sorted(chunk_dir.glob("f_*.jpg"))
-                assert len(symlinks) == len(expected_chunk)
-                for link, expected_target in zip(symlinks, expected_chunk):
-                    assert link.resolve() == expected_target.resolve(), (
-                        f"chunk {sheet_idx} symlink {link.name} points to "
-                        f"{link.resolve()}, expected {expected_target.resolve()}"
+                links = sorted(chunk_dir.glob("f_*.jpg"))
+                assert len(links) == len(expected_chunk)
+                for link, expected_target in zip(links, expected_chunk):
+                    assert os.path.samefile(link, expected_target), (
+                        f"chunk {sheet_idx} link {link.name} is not {expected_target.name}"
                     )
         finally:
             shutil.rmtree(out_dir, ignore_errors=True)

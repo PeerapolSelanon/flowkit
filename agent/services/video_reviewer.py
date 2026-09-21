@@ -293,7 +293,9 @@ def _create_contact_sheets(
         chunk_dir = Path(out_dir) / f"_chunk_{sheet_idx:02d}"
         chunk_dir.mkdir(exist_ok=True)
         for i, frame_path in enumerate(chunk, start=1):
-            os.symlink(frame_path.resolve(), chunk_dir / f"f_{i:04d}.jpg")
+            # Hard link, not symlink: Windows refuses symlinks without admin or
+            # Developer Mode (WinError 1314). Both sit under out_dir, one volume.
+            os.link(frame_path, chunk_dir / f"f_{i:04d}.jpg")
         output = Path(out_dir) / f"sheet_{sheet_idx:02d}.jpg"
         # Pick the largest divisor of the chunk size (up to REVIEW_SHEET_COLS) as the
         # column count, so every cell in the tile is filled — zero unfilled cells for any
