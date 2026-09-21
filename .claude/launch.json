@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--python", "3.11", "--with-requirements", "requirements.txt", "python", "-m", "agent.main"],
+      "port": 8100
+    },
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "dashboard"],
+      "port": 5173
+    }
+  ]
+}
