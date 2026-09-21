@@ -96,6 +96,11 @@ header {
 .btn-primary:hover, #btn-panel:hover { background: linear-gradient(180deg, #5b97fb, #4a8bf7); }
 .btn:focus-visible, #btn-panel:focus-visible, .td-id:focus-visible { outline: 2px solid rgba(59, 130, 246, 0.7); outline-offset: 2px; }
 
+/* Danger: only for the cookie reset, which signs the user out */
+.btn-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #fecaca; }
+.btn-danger:hover { background: rgba(239, 68, 68, 0.22); border-color: rgba(239, 68, 68, 0.6); }
+header .btn, header #btn-panel { padding: 5px 10px; }
+
 /* Section headers and count pills */
 .log-header {
   display: flex; align-items: center; justify-content: space-between;

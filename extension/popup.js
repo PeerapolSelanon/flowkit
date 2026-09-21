@@ -126,6 +126,10 @@ function renderLog(entries) {
   });
 }
 
+document.getElementById('btn-dashboard').addEventListener('click', () => {
+  chrome.tabs.create({ url: 'http://localhost:5173' });
+});
+
 document.getElementById('btn-panel').addEventListener('click', () => {
   chrome.windows.getCurrent((win) => {
     chrome.sidePanel.open({ windowId: win.id });

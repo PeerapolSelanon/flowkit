@@ -285,6 +285,61 @@ document.getElementById('btn-token').addEventListener('click', () => {
   });
 });
 
+const DASHBOARD_URL = 'http://localhost:5173'; // ponytail: dev server URL; make it a setting if the dashboard ever gets hosted elsewhere
+const GOOGLE_COOKIE_ORIGINS = [
+  'https://google.com', 'https://www.google.com', 'https://accounts.google.com',
+  'https://flow.google.com', 'https://labs.google',
+];
+
+document.getElementById('btn-dashboard').addEventListener('click', () => {
+  chrome.tabs.create({ url: DASHBOARD_URL });
+});
+
+const FLOW_TAB_PATTERNS = ['https://flow.google.com/*', 'https://labs.google/fx/tools/flow*', 'https://labs.google/fx/*/tools/flow*'];
+
+// Resolves with the tab's final URL once it finishes loading (or after timeoutMs).
+function waitForTabLoad(tabId, timeoutMs = 10000) {
+  return new Promise((resolve) => {
+    const done = (url) => { chrome.tabs.onUpdated.removeListener(onUpd); clearTimeout(timer); resolve(url || ''); };
+    const onUpd = (id, info, t) => { if (id === tabId && info.status === 'complete') done(t.url); };
+    const timer = setTimeout(() => chrome.tabs.get(tabId).then((t) => done(t.url)).catch(() => done('')), timeoutMs);
+    chrome.tabs.onUpdated.addListener(onUpd);
+  });
+}
+
+// Fix for 403 PUBLIC_ERROR_UNUSUAL_ACTIVITY / CAPTCHA loops: remember the Flow tab, drop the cookies, reopen the same URL.
+document.getElementById('btn-cookies').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-cookies');
+  const note = document.getElementById('btn-cookies-note');
+  if (!confirm('Clear Google cookies and reload the Flow tab?')) return;
+  btn.disabled = true;
+  btn.textContent = 'Clearing...';
+  try {
+    const tabs = await chrome.tabs.query({ url: FLOW_TAB_PATTERNS });
+    const flowTab = tabs[0] || null;
+    const url = (flowTab && flowTab.url) || 'https://flow.google.com/';
+    await chrome.browsingData.remove({ origins: GOOGLE_COOKIE_ORIGINS }, { cookies: true, cacheStorage: false });
+    const tab = flowTab ? await chrome.tabs.update(flowTab.id, { url, active: true }) : await chrome.tabs.create({ url });
+    // First load right after the reset bounces to /about while Flow re-creates its session;
+    // give it a beat and open the same URL again, up to 3 times.
+    let landed = await waitForTabLoad(tab.id);
+    for (let attempt = 1; attempt <= 3 && landed.includes('flow.google.com/about'); attempt++) {
+      note.textContent = 'Flow bounced to /about, retrying (' + attempt + '/3)...';
+      await new Promise((r) => setTimeout(r, 1500));
+      await chrome.tabs.update(tab.id, { url });
+      landed = await waitForTabLoad(tab.id);
+    }
+    note.textContent = landed.includes('flow.google.com/about')
+      ? 'Flow still shows /about — sign in there, then open your project and Refresh token.'
+      : 'Cookies cleared, Flow tab reopened. Now Refresh token.';
+  } catch (e) {
+    note.textContent = 'Could not clear cookies: ' + (e && e.message ? e.message : e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Clear Google cookies';
+  }
+});
+
 // ── Init ─────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
