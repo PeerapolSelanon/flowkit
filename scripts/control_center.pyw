@@ -12,7 +12,6 @@ import tkinter as tk
 import urllib.request
 import webbrowser
 from pathlib import Path
-from tkinter import ttk
 
 ROOT = Path(__file__).resolve().parent.parent
 LOGS = ROOT / "scripts" / "logs"
@@ -21,6 +20,12 @@ LOGS.mkdir(exist_ok=True)
 PY = ROOT / "venv" / "Scripts" / "python.exe"
 PY = str(PY) if PY.exists() else sys.executable.replace("pythonw.exe", "python.exe")
 NPM = shutil.which("npm.cmd") or shutil.which("npm") or "npm"
+
+# Same palette as dashboard/src/index.css
+BG, CARD, BORDER = "#0b0d14", "#151a26", "#232a3b"
+TEXT, MUTED, ACCENT = "#e6e9f2", "#7c849c", "#6c8cff"
+GREEN, RED, ORANGE = "#2ecc71", "#e74c3c", "#e67e22"
+FONT = "Segoe UI"
 
 
 def dashboard_cmd():
@@ -67,44 +72,83 @@ def health():
         return None
 
 
+def button(parent, text, command, bg=CARD, fg=TEXT, width=8, bold=False):
+    b = tk.Button(parent, text=text, command=command, width=width, bg=bg, fg=fg, relief="flat", bd=0,
+                  cursor="hand2", font=(FONT, 9, "bold" if bold else "normal"), padx=6, pady=5,
+                  activebackground=BORDER if bg == CARD else bg, activeforeground=fg,
+                  highlightthickness=1, highlightbackground=BORDER, highlightcolor=BORDER)
+    return b
+
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Flow Kit Control Center")
+        self.configure(bg=BG)
         self.resizable(False, False)
-        pad = {"padx": 10, "pady": 6}
+
+        head = tk.Frame(self, bg=BG)
+        head.pack(fill="x", padx=20, pady=(18, 10))
+        tk.Label(head, text="F", bg=ACCENT, fg=BG, font=(FONT, 11, "bold"), width=2).pack(side="left", padx=(0, 10))
+        tk.Label(head, text="FLOW KIT", bg=BG, fg=TEXT, font=(FONT, 11, "bold")).pack(side="left")
+        tk.Label(head, text="control center", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
+        self.start_all_btn = button(head, "▶  Start all", self.start_all, bg=ACCENT, fg=BG, width=11, bold=True)
+        self.start_all_btn.pack(side="right")
+
         self.rows = []
-        for i, (name, port, cmd, url) in enumerate(SERVERS):
-            dot = tk.Label(self, text="●", font=("Segoe UI", 14), fg="gray")
-            dot.grid(row=i, column=0, **pad)
-            tk.Label(self, text=f"{name}  (:{port})", width=22, anchor="w", font=("Segoe UI", 10)).grid(row=i, column=1, **pad)
-            btn = ttk.Button(self, text="Start", width=9)
-            btn.grid(row=i, column=2, **pad)
-            ttk.Button(self, text="Restart", width=9, command=lambda p=port, n=name, c=cmd: self.restart(n, p, c)).grid(row=i, column=3, **pad)
-            ttk.Button(self, text="Open", width=7, command=lambda u=url: webbrowser.open(u)).grid(row=i, column=4, **pad)
-            self.rows.append((name, port, cmd, dot, btn))
-        self.ext = tk.Label(self, text="", anchor="w", font=("Segoe UI", 9))
-        self.ext.grid(row=len(SERVERS), column=0, columnspan=5, sticky="w", **pad)
-        ttk.Button(self, text="Open logs folder", command=lambda: os.startfile(LOGS)).grid(row=len(SERVERS) + 1, column=0, columnspan=5, pady=(0, 10))
+        for name, port, cmd, url in SERVERS:
+            card = tk.Frame(self, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
+            card.pack(fill="x", padx=20, pady=4)
+            dot = tk.Label(card, text="●", bg=CARD, fg=MUTED, font=(FONT, 13))
+            dot.pack(side="left", padx=(14, 8), pady=12)
+            txt = tk.Frame(card, bg=CARD)
+            txt.pack(side="left")
+            tk.Label(txt, text=name, bg=CARD, fg=TEXT, font=(FONT, 10, "bold"), anchor="w").pack(anchor="w")
+            state = tk.Label(txt, text=f"localhost:{port}", bg=CARD, fg=MUTED, font=(FONT, 8), anchor="w")
+            state.pack(anchor="w")
+            button(card, "Open", lambda u=url: webbrowser.open(u), width=6).pack(side="right", padx=(4, 12))
+            button(card, "Restart", lambda p=port, n=name, c=cmd: self.restart(n, p, c)).pack(side="right", padx=4)
+            btn = button(card, "Start", None)
+            btn.pack(side="right", padx=4)
+            self.rows.append((name, port, cmd, dot, state, btn))
+
+        foot = tk.Frame(self, bg=BG)
+        foot.pack(fill="x", padx=20, pady=(10, 16))
+        self.ext_dot = tk.Label(foot, text="●", bg=BG, fg=MUTED, font=(FONT, 10))
+        self.ext_dot.pack(side="left", padx=(4, 6))
+        self.ext = tk.Label(foot, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w")
+        self.ext.pack(side="left")
+        tk.Label(foot, text="logs", bg=BG, fg=ACCENT, font=(FONT, 9, "underline"), cursor="hand2").pack(side="right")
+        foot.winfo_children()[-1].bind("<Button-1>", lambda e: os.startfile(LOGS))
         self.tick()
+
+    def start_all(self):
+        for name, port, cmd, *_ in self.rows:
+            if pid_on_port(port) is None:
+                start(name, cmd())
 
     def restart(self, name, port, cmd):
         stop(port)
         self.after(1500, lambda: start(name, cmd()))
 
     def tick(self):
-        for name, port, cmd, dot, btn in self.rows:
+        all_up = True
+        for name, port, cmd, dot, state, btn in self.rows:
             up = pid_on_port(port) is not None
-            dot.config(fg="#2ecc71" if up else "#e74c3c")
-            btn.config(text="Stop" if up else "Start",
+            all_up &= up
+            dot.config(fg=GREEN if up else RED)
+            state.config(text=f"localhost:{port}  ·  {'running' if up else 'stopped'}", fg=GREEN if up else MUTED)
+            btn.config(text="Stop" if up else "Start", fg=RED if up else GREEN,
                        command=(lambda p=port: stop(p)) if up else (lambda n=name, c=cmd: start(n, c())))
+        self.start_all_btn.config(state="disabled" if all_up else "normal", bg=BORDER if all_up else ACCENT,
+                                  fg=MUTED if all_up else BG)
         h = health()
         if h is None:
-            self.ext.config(text="API not answering yet", fg="gray")
+            self.ext_dot.config(fg=MUTED); self.ext.config(text="API not answering yet", fg=MUTED)
         elif h.get("extension_connected"):
-            self.ext.config(text="✔ Extension connected. Ready to work.", fg="#2ecc71")
+            self.ext_dot.config(fg=GREEN); self.ext.config(text="Extension connected · ready to work", fg=GREEN)
         else:
-            self.ext.config(text="✘ Extension not connected: open a signed-in https://flow.google.com/ tab.", fg="#e67e22")
+            self.ext_dot.config(fg=ORANGE); self.ext.config(text="Extension not connected · open a signed-in flow.google.com tab", fg=ORANGE)
         self.after(2000, self.tick)
 
 
