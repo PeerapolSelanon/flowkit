@@ -372,15 +372,22 @@ async def refresh_project_urls(project_id: str):
 
 
 @router.get("/media/{media_id}")
-async def get_media(media_id: str):
+async def get_media(media_id: str, raw: bool = False):
     """Get media metadata + fresh signed URL from Google Flow.
 
     Returns the raw response which may contain ``video.encodedVideo`` for
-    workflow-backed video generations.
+    workflow-backed video generations. ``raw=1`` returns the unparsed RPC
+    payload (prompt, source image, model) for media Flow Kit never tracked.
     """
     client = get_flow_client()
     if not client.connected:
         raise HTTPException(503, "Extension not connected")
+    if raw:
+        from agent.services import flow_batch as fb
+        r = await client.batch_rpc(fb.RPC_MEDIA, fb.media_request(media_id), timeout=60)
+        if r.get("error"):
+            raise HTTPException(502, r["error"])
+        return fb.first_payload(r.get("data") or "", fb.RPC_MEDIA)
     result = await client.get_media(media_id)
     if result.get("error"):
         raise HTTPException(502, result["error"])
@@ -388,6 +395,35 @@ async def get_media(media_id: str):
     if isinstance(status, int) and status >= 400:
         raise HTTPException(status, result.get("data", "Media not found"))
     return result.get("data", result)
+
+
+@router.get("/project-media/{project_id}")
+async def list_project_media(project_id: str, full: bool = False):
+    """List every generation in a Flow project: title, media_id, created, done.
+
+    The project is the only listing Flow has, so this is how work made in the
+    Flow UI (never registered in Flow Kit) gets found. Entries on the wire:
+    ``[opId, null, null, [title, created, null, null, mediaId, clientUuid, done], projectId]``.
+    """
+    from agent.services import flow_batch as fb
+    client = get_flow_client()
+    if not client.connected:
+        raise HTTPException(503, "Extension not connected")
+    result = await client.batch_rpc(
+        fb.RPC_PROJECT_MEDIA, fb.project_media_request(project_id), timeout=180)
+    if result.get("error"):
+        raise HTTPException(502, result["error"])
+    payload = fb.first_payload(result.get("data") or "", fb.RPC_PROJECT_MEDIA)
+    items = []
+    for node in fb._walk_lists(payload):
+        if len(node) < 4 or not isinstance(node[0], str) or not isinstance(node[3], list):
+            continue
+        d = node[3]
+        if len(d) > 4 and isinstance(d[4], str) and client._UUID_RE.match(d[4]):
+            items.append({"operation_id": node[0], "title": d[0], "created": d[1],
+                          "media_id": d[4], "done": d[6] if len(d) > 6 else None,
+                          **({"raw": node} if full else {})})
+    return {"count": len(items), "items": items}
 
 
 @router.post("/edit-image")

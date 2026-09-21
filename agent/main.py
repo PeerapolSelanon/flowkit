@@ -63,7 +63,7 @@ async def ws_handler(websocket):
 async def run_ws_server():
     """Run WebSocket server for extension connections."""
     try:
-        async with websockets.serve(ws_handler, WS_HOST, WS_PORT):
+        async with websockets.serve(ws_handler, WS_HOST, WS_PORT, max_size=64 * 1024 * 1024):
             logger.info("WebSocket server listening on ws://%s:%d", WS_HOST, WS_PORT)
             await asyncio.Future()  # run forever
     except OSError as e:
