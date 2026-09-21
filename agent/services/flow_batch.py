@@ -44,6 +44,10 @@ RPC_PROJECT_MEDIA = "Zzl0ze"
 RPC_MEDIA = "as29s"
 RPC_UPLOAD_IMAGE = "maseQ"
 RPC_UPSCALE_IMAGE = "SPrCad"
+RPC_UPSCALE_VIDEO = "p0UkFb"
+#: Captured 2026-09-21 off the Flow download menu's 1080p entry. The 4K entry
+#: (50 credits) was not captured, so it has no model here.
+VIDEO_UPSCALE_MODEL_1080P = "veo_3_1_upsampler_1080p"
 
 CAPTCHA_IMAGE = "IMAGE_GENERATION"
 CAPTCHA_VIDEO = "VIDEO_GENERATION"
@@ -396,6 +400,46 @@ def image_upscale_request(media_id: str, resolution: str = "2K") -> str:
     except KeyError:
         raise ValueError("image upscale resolution must be 2K or 4K") from None
     return build_envelope(RPC_UPSCALE_IMAGE, [media_id, code, _context(None)])
+
+
+def video_upscale_request(media_id: str, workflow_id: str, project_id: str,
+                          aspect: Any = VIDEO_ASPECT_LANDSCAPE,
+                          model: str = VIDEO_UPSCALE_MODEL_1080P) -> str:
+    """Video upsample (RPC ``p0UkFb``), as the download menu's 1080p sends it.
+
+    ``workflow_id`` is the Flow-side scene the clip belongs to — slot 2 of the
+    clip's own operation record, not anything Flow Kit stores. Slot 6's ``2``
+    and the 24 nulls before the model are copied from the capture, not decoded.
+    """
+    item = ([[None, media_id], None, resolve_video_aspect(aspect), None,
+             [None, workflow_id, None, None, _client_uuid()], None, 2]
+            + [None] * 24 + [model])
+    return build_envelope(RPC_UPSCALE_VIDEO,
+                          [[item], _context(project_id), [_client_uuid()]])
+
+
+def read_video_upscale_submit(payload: Any) -> str:
+    """`[[[["<media>_upsampled"], "", null, null, 1]], 50, …]` → the new media id.
+
+    That id doubles as the operation id: poll it with ``jwpduf`` and resolve
+    it with ``as29s`` like any other clip.
+    """
+    try:
+        media_id = payload[0][0][0][0]
+    except (IndexError, TypeError):
+        media_id = None
+    if not isinstance(media_id, str) or not media_id:
+        raise FlowBatchError("video upscale response carried no media id")
+    return media_id
+
+
+def read_operation_workflow(payload: Any) -> Optional[str]:
+    """Slot 2 of a ``jwpduf`` record: the Flow scene/workflow the media sits in."""
+    try:
+        workflow_id = payload[2][0][2]
+    except (IndexError, TypeError):
+        return None
+    return workflow_id if isinstance(workflow_id, str) else None
 
 
 def video_request(prompt: str, project_id: str, source_media_id: str,

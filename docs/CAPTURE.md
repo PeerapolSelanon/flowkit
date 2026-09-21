@@ -1,7 +1,7 @@
 # Capturing a Flow batchexecute payload
 
 `agent/services/flow_batch.py` only knows the RPC shapes that were captured off a
-real UI action. Adding one — video upscale, reference-to-video, start+end-frame
+real UI action. Adding one — 4K video upscale, reference-to-video, start+end-frame
 chaining, a base-image edit — starts by watching the browser do it, because
 guessing at Google's positional payloads does not work. Thirty generations were
 spent proving that a reference image in the wrong slot is *accepted* and then
@@ -20,8 +20,9 @@ request bodies to disk, so it goes in for one session and comes straight back ou
 | operation → media id | `Zzl0ze` | `projects/<id>`; the listing is ~17 MB |
 | media id → urls | `as29s` | signed `/video/` + poster `/image/` |
 | upload an image | `maseQ` | base64 in the payload, captcha like a generate |
+| upscale a video to 1080p | `p0UkFb` | needs the clip's workflow id (slot 2 of its `jwpduf` record); result is `<media>_upsampled` |
 
-Missing, and each blocked behind a capture: **video upscale**, **r2v**,
+Missing, and each blocked behind a capture: **4K video upscale**, **r2v**,
 **start+end-frame chaining**, and the **base-image** variant of the image edit.
 
 ## Recording one

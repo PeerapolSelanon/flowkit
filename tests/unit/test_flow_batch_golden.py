@@ -99,3 +99,20 @@ def test_video_request_passes_the_model_key_through_untouched(pinned_uuids):
     freq = fb.video_request("x", PROJECT, MEDIA, model="abra_i2v_8s")
     assert '\\"abra_i2v_8s\\"' in freq
     assert "veo_3_1" not in freq
+
+
+# Captured 2026-09-21 off the download menu's 1080p entry; ids swapped for the
+# fixture's, captcha for the slot marker. Nothing else changed.
+GOLDEN_VIDEO_UPSCALE = (
+    '[[["p0UkFb","[[[[null,\\"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee\\"],null,2,null,'
+    '[null,\\"wf-1\\",null,null,\\"00000000-0000-4000-8000-000000000001\\"],null,2,'
+    + "null," * 24 +
+    '\\"veo_3_1_upsampler_1080p\\"]],[null,22,null,null,null,'
+    '\\"11111111-2222-3333-4444-555555555555\\",null,null,null,null,'
+    '[\\"__CAPTCHA__\\",1]],[\\"00000000-0000-4000-8000-000000000002\\"]]",'
+    'null,"generic"]]]'
+)
+
+
+def test_video_upscale_envelope(pinned_uuids):
+    assert fb.video_upscale_request(MEDIA, "wf-1", PROJECT) == GOLDEN_VIDEO_UPSCALE

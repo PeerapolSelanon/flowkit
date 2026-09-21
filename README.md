@@ -25,13 +25,12 @@
 > `FLOW_PROJECT_ID`; Flow Kit can no longer create the project for you.
 >
 > Every Omni 1.1 Flash video mode is ported and live-verified: text-to-video,
-> first frame, first+last frame, and references. Three capabilities remain
+> first frame, first+last frame, and references. Two capabilities remain
 > unported on the **Veo** path because their payloads were never captured off
-> the new UI — **video upscale**, **Veo reference-to-video**, and **Veo
-> start+end-frame chaining**. They fail loudly with `UNSUPPORTED_ON_BATCH_API`
-> instead of quietly producing the wrong thing. For the latter two, Omni covers
+> the new UI — **Veo reference-to-video** and **Veo start+end-frame chaining**. They fail loudly with `UNSUPPORTED_ON_BATCH_API`
+> instead of quietly producing the wrong thing. Omni covers
 > the same shot with `model_family=omni_flash`, or `FLOW_ALLOW_DEGRADED=1` drops
-> them to plain i2v; video upscale has no fallback. To restore one properly see
+> them to plain i2v. Video upscale is ported at 1080p only. To restore one properly see
 > [`docs/CAPTURE.md`](docs/CAPTURE.md).
 
 ---
@@ -246,7 +245,8 @@ Three capabilities have no captured payload, so they fail with
 
 | Capability | Status | Workaround |
 |---|---|---|
-| 4K/1080p upscale (`/fk-pipeline` last step) | unported | none — keep the 1080p render |
+| 1080p video upscale (`/fk-pipeline` last step) | ported (`p0UkFb`) | — |
+| 4K video upscale | unported | none — 1080p is the ceiling |
 | Veo reference-to-video (r2v) | unported | Omni r2v (`model_family=omni_flash`), or `FLOW_ALLOW_DEGRADED=1` → i2v off the first reference |
 | Veo start+end-frame chaining (`/fk-gen-chain-videos`) | unported | Omni first+last (`model_family=omni_flash`), or `FLOW_ALLOW_DEGRADED=1` → i2v off the start frame |
 | Omni Flash text-to-video | ported | `POST /api/flow/generate-video-omni-text` (4/6/8/10s) |
@@ -857,7 +857,7 @@ String patterns in `error_message` that the worker recognizes:
 | `extension_switched` | User switched Flow tabs mid-generation | Re-queue PENDING |
 | `NO_AT_TOKEN` | Flow tab is signed out, on an interstitial, or still booting | Open `flow.google.com`, sign in, let the app load |
 | `NO_FLOW_PROJECT` | No Flow project to scope the RPC to | Pin `FLOW_PROJECT_ID` — **terminal, not retried** |
-| `UNSUPPORTED_ON_BATCH_API` | Upscale / r2v / chaining — payload never captured | See `docs/CAPTURE.md` — **terminal, not retried** |
+| `UNSUPPORTED_ON_BATCH_API` | 4K upscale / r2v / chaining — payload never captured | See `docs/CAPTURE.md` — **terminal, not retried** |
 | `NO_FLOW_TAB` | No Google Flow tab available for reCAPTCHA | User must open a Flow tab |
 | `Failed to fetch` | Network drop inside extension service worker | Retry with backoff |
 | `timeout` / WS 60s no response | Extension hung mid-request | Re-queue PENDING |

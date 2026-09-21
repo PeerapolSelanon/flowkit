@@ -390,8 +390,14 @@ class FlowClient:
                      "scene", scene["id"], f"{prefix}_image_url")
                 want(scene.get(f"{prefix}_video_media_id"), "video",
                      "scene", scene["id"], f"{prefix}_video_url")
-                want(scene.get(f"{prefix}_upscale_media_id"), "video",
-                     "scene", scene["id"], f"{prefix}_upscale_url")
+                # The stored id is the base clip's uuid (the worker keeps media
+                # ids uuid-shaped); the 1080p file lives under "<uuid>_upsampled".
+                # ponytail: assumes every upscale came from p0UkFb; pre-migration
+                # upscale ids would need their own marker if any are still live.
+                up = scene.get(f"{prefix}_upscale_media_id")
+                if up and self._UUID_RE.match(up):
+                    targets.setdefault((f"{up}_upsampled", "video"), []).append(
+                        ("scene", scene["id"], f"{prefix}_upscale_url"))
         for char in await crud.get_project_characters(project_id):
             want(char.get("media_id"), "image", "character", char["id"], "reference_image_url")
 
@@ -789,12 +795,39 @@ class FlowClient:
 
     async def upscale_video(self, media_id: str, scene_id: str,
                              aspect_ratio: str = "VIDEO_ASPECT_RATIO_PORTRAIT",
-                             resolution: str = "VIDEO_RESOLUTION_4K") -> dict:
-        """Upscale a video."""
-        return {"error": _unsupported(
-            "video upscale",
-            "no upsampler rpc appears in the new frontend's captures",
-        )}
+                             resolution: str = "VIDEO_RESOLUTION_1080P") -> dict:
+        """Submit a 1080p upsample of a finished clip. Returns operations for the poller.
+
+        The request needs the clip's Flow project and workflow, which only the
+        clip's own operation record knows, so one ``jwpduf`` round comes first.
+        """
+        if "4K" in str(resolution).upper():
+            return {"error": _unsupported(
+                "4K video upscale",
+                "only the 1080p upsampler was captured off the download menu",
+            )}
+        try:
+            record = await self._batch_payload(
+                fb.RPC_OPERATION, fb.operation_request(media_id), timeout=60)
+            pid = fb.read_operation(record).project_id or self._batch_project_id("")
+            workflow_id = fb.read_operation_workflow(record)
+            if not workflow_id:
+                return {"error": f"video upscale: no workflow id for media {media_id[:12]}"}
+            payload = await self._batch_payload(
+                fb.RPC_UPSCALE_VIDEO,
+                fb.video_upscale_request(media_id, workflow_id, pid, aspect=aspect_ratio),
+                fb.CAPTCHA_VIDEO, timeout=120)
+            try:
+                upscaled = fb.read_video_upscale_submit(payload)
+            except fb.FlowBatchError:
+                # Seen on a clip already upsampled from the UI: no new record
+                # comes back. The id is deterministic and the poll proves it.
+                upscaled = f"{media_id}_upsampled"
+        except Exception as e:
+            return _batch_error(e)
+
+        self._remember_operation(upscaled, pid)
+        return {"status": 200, "data": {"operations": [_as_pending_operation(upscaled)]}}
 
     async def check_video_status(self, operations: list[dict]) -> dict:
         """One poll round for each submitted operation.
@@ -831,6 +864,9 @@ class FlowClient:
 
     async def _poll_batch_operation(self, operation_id: str) -> dict:
         media_id = self._operation_media.get(operation_id)
+        if not media_id and operation_id.endswith("_upsampled"):
+            # An upsample's operation id is its media id; it never needs the listing.
+            media_id = operation_id
         complaint = None
 
         if not media_id:
