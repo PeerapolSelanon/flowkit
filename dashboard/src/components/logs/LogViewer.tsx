@@ -98,7 +98,7 @@ export default function LogViewer() {
 
       <Card className="py-0 flex-1 min-h-0 overflow-hidden">
         <div
-          className="grid gap-3.5 px-4 py-2.5 text-[9px] tracking-widest"
+          className="grid gap-3.5 px-4 py-2.5 text-[10px]"
           style={{ gridTemplateColumns: '150px 200px 90px 140px 1fr', borderBottom: '1px solid var(--border)', color: 'var(--muted)' }}
         >
           <span>{t('logs.table.time')}</span><span>{t('logs.table.type')}</span><span>{t('logs.table.status')}</span><span>{t('logs.table.target')}</span><span>{t('logs.table.detail')}</span>
@@ -113,7 +113,7 @@ export default function LogViewer() {
                 return (
                   <div
                     key={row.id}
-                    className="grid gap-3.5 py-2 text-[11px]"
+                    className="grid gap-3.5 py-2 text-[11px] font-mono"
                     style={{ gridTemplateColumns: '150px 200px 90px 140px 1fr', borderBottom: '1px solid var(--border)' }}
                   >
                     <span style={{ color: 'var(--muted)' }}>{new Date(row.time).toLocaleString()}</span>

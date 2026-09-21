@@ -28,8 +28,8 @@ export default function StageNode({ idx, name, subtitle, done, processing, faile
         <div style={{ height: 2, margin: '-16px 0 0', background: accent }} />
         <CardHeader>
           <CardTitle>
-            <span className="text-[10px] tracking-widest" style={{ color: 'var(--muted)' }}>{idx}</span>
-            <span className="ml-2 text-sm tracking-wide uppercase">{name}</span>
+            <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{idx}</span>
+            <span className="ml-2 text-sm">{name}</span>
           </CardTitle>
           <CardDescription>
             <span className="text-xs">{subtitle}</span>
@@ -41,7 +41,7 @@ export default function StageNode({ idx, name, subtitle, done, processing, faile
         </CardHeader>
         <CardContent>
           <Progress value={pct} />
-          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-[10px]" style={{ color: 'var(--muted)' }}>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5" style={{ background: 'var(--green)' }} />{done} {t('stageNode.done')}
             </span>

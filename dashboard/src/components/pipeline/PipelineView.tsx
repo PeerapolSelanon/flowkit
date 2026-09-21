@@ -135,7 +135,7 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
       {/* Header */}
       <div className="flex items-start justify-between gap-6 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2.5 text-[10px] tracking-widest uppercase" style={{ color: 'var(--muted)' }}>
+          <div className="flex items-center gap-2.5 text-[10px]" style={{ color: 'var(--muted)' }}>
             <span style={{ color: 'var(--accent)' }}>{t('app.breadcrumbRoot')}</span>
             <span>/</span>
             <span>{project?.name ?? '…'}</span>
@@ -151,7 +151,7 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
         <div className="flex items-center gap-4">
           {characters.length > 0 && (
             <div className="flex flex-col gap-1.5 items-end">
-              <span className="text-[9px] tracking-widest uppercase" style={{ color: 'var(--muted)' }}>{t('pipeline.castEntities')}</span>
+              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('pipeline.castEntities')}</span>
               <AvatarGroup>
                 {characters.map(c => (
                   <Tooltip key={c.id}>
@@ -162,7 +162,7 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
                     </TooltipTrigger>
                     <TooltipContent>
                       <div className="flex flex-col gap-1 max-w-[240px]">
-                        <span className="text-[11px] tracking-wide">{c.name} · {c.entity_type}</span>
+                        <span className="text-[11px]">{c.name} · {c.entity_type}</span>
                         {c.description && <span className="text-[11px] opacity-75 leading-snug">{c.description}</span>}
                       </div>
                     </TooltipContent>
@@ -203,7 +203,7 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
       {/* Sort toggle + scene/refs grid */}
       {activeStage === 'refs' ? (
         <div>
-          <div className="text-xs mb-2.5 font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+          <div className="text-sm mb-2.5 font-semibold" style={{ color: 'var(--muted)' }}>
             {t('pipeline.refsHeading', { n: characters.length })}
           </div>
           <div className="grid gap-2.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
@@ -232,11 +232,11 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
       ) : (
         <>
           <div className="flex items-center justify-between gap-4">
-            <h2 className="m-0 text-xs tracking-widest uppercase" style={{ color: 'var(--text)' }}>
+            <h2 className="m-0 text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {t('pipeline.stageHeading', { idx: STAGE_META.find(m => m.key === activeStage)!.idx, name: t(STAGE_META.find(m => m.key === activeStage)!.nameKey) })}
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] tracking-wide uppercase" style={{ color: 'var(--muted)' }}>{t('pipeline.sort')}</span>
+              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('pipeline.sort')}</span>
               <Button variant="outline" size="sm" onClick={() => setSortFailedFirst(v => !v)}>
                 {sortFailedFirst ? t('pipeline.sortFailuresFirst') : t('pipeline.sortSceneOrder')}
               </Button>

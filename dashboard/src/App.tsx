@@ -4,6 +4,8 @@ import { LayoutDashboard, FolderOpen, Film, ScrollText, BookOpen, SlidersHorizon
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { WebSocketProvider } from './api/WebSocketContext'
 import { useWebSocketContext } from './api/useWebSocketContext'
+import { SystemHealthProvider } from './api/SystemHealthProvider'
+import { useSystemHealth } from './api/systemHealth'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { useTranslation } from './i18n/useTranslation'
 import { LANGS, LANG_LABELS, type Lang } from './i18n/translations'
@@ -91,19 +93,15 @@ function LanguageSwitcher() {
 function Sidebar() {
   const { t } = useTranslation()
   const { worker } = useWebSocketContext()
-  const [health, setHealth] = useState<{ extension_connected: boolean } | null>(null)
-
-  useEffect(() => {
-    fetchAPI<{ extension_connected: boolean }>('/health').then(setHealth).catch(() => setHealth(null))
-  }, [])
+  const health = useSystemHealth()
 
   return (
     <aside className="w-52 flex-shrink-0 flex flex-col border-r" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
       <div className="px-4 py-4 flex items-center gap-2.5 border-b" style={{ borderColor: 'var(--border)' }}>
-        <span className="w-[22px] h-[22px] rounded flex items-center justify-center text-xs font-bold" style={{ background: 'var(--accent)', color: 'var(--bg)' }}>F</span>
+        <span className="brand-mark w-[22px] h-[22px] rounded-md flex items-center justify-center text-xs font-bold">F</span>
         <div className="flex flex-col">
-          <span className="text-xs font-bold tracking-widest">{t('app.brandName')}</span>
-          <span className="text-[9px] tracking-wide" style={{ color: 'var(--muted)' }}>{t('app.brandTag')}</span>
+          <span className="text-xs font-bold">{t('app.brandName')}</span>
+          <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('app.brandTag')}</span>
         </div>
       </div>
 
@@ -128,16 +126,16 @@ function Sidebar() {
 
       <div className="mt-auto px-4 py-3.5 border-t flex flex-col gap-2.5" style={{ borderColor: 'var(--border)' }}>
         <LanguageSwitcher />
-        <div className="flex items-center justify-between text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>
+        <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--muted)' }}>
           <span>{t('app.workers')}</span>
           <span style={{ color: 'var(--text)' }}>{worker ? `${worker.active}/${worker.active + worker.slots}` : '—'}</span>
         </div>
         <div className="flex items-center gap-1.5 text-[10px]" style={{ color: 'var(--muted)' }}>
           <span
             className="w-1.5 h-1.5 rounded-full"
-            style={{ background: health?.extension_connected ? 'var(--green)' : 'var(--red)' }}
+            style={{ background: health.extension === 'ok' ? 'var(--green)' : health.extension === 'down' ? 'var(--red)' : 'var(--muted)' }}
           />
-          {health?.extension_connected ? t('app.extensionConnected') : health ? t('app.extensionDisconnected') : t('app.extensionChecking')}
+          {health.extension === 'ok' ? t('app.extensionConnected') : health.extension === 'down' ? t('app.extensionDisconnected') : t('app.extensionChecking')}
         </div>
       </div>
     </aside>
@@ -152,7 +150,7 @@ function Header() {
 
   return (
     <header className="flex items-center gap-4 px-5 h-13 flex-shrink-0 border-b" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-      <div className="flex items-center gap-2 text-[11px] tracking-wide" style={{ color: 'var(--muted)' }}>
+      <div className="flex items-center gap-2 text-[11px]" style={{ color: 'var(--muted)' }}>
         <span style={{ color: 'var(--accent)' }}>{t('app.breadcrumbRoot')}</span>
         {crumbs.map((c, i) => (
           <span key={i} className="flex items-center gap-2">
@@ -163,7 +161,7 @@ function Header() {
       </div>
       <span className="ml-auto" />
       <div className="flex items-center gap-3.5 text-[10px]" style={{ color: 'var(--muted)' }}>
-        <span className="tracking-wide">{clock.toLocaleTimeString()}</span>
+        <span className="font-mono">{clock.toLocaleTimeString()}</span>
         <span className="flex items-center gap-1.5 px-2.5 py-1 rounded border" style={{ borderColor: 'var(--border)', color: isConnected ? 'var(--green)' : 'var(--red)' }}>
           <span
             className="w-1.5 h-1.5 rounded-full"
@@ -203,9 +201,11 @@ export default function App() {
     <BrowserRouter>
       <LanguageProvider>
         <WebSocketProvider>
-          <TooltipProvider>
-            <Layout />
-          </TooltipProvider>
+          <SystemHealthProvider>
+            <TooltipProvider>
+              <Layout />
+            </TooltipProvider>
+          </SystemHealthProvider>
         </WebSocketProvider>
       </LanguageProvider>
     </BrowserRouter>

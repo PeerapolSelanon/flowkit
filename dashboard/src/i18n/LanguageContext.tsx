@@ -9,10 +9,9 @@ function detectDefaultLang(): Lang {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored && (LANGS as readonly string[]).includes(stored)) return stored as Lang
   } catch {
-    // localStorage unavailable — fall through to browser language detection
+    // localStorage unavailable — fall through to default
   }
-  const nav = (navigator.language || 'en').slice(0, 2).toLowerCase()
-  return (LANGS as readonly string[]).includes(nav) ? (nav as Lang) : 'en'
+  return 'th' // ponytail: Thai is the product default; no navigator sniffing
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {

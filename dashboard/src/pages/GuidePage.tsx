@@ -67,7 +67,7 @@ export default function GuidePage() {
 
       <Card className="py-4">
         <CardHeader>
-          <CardTitle className="text-xs tracking-widest uppercase">{t('guide.status.title')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('guide.status.title')}</CardTitle>
           <CardDescription className="text-[11px]">{t('guide.status.desc')}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -125,7 +125,7 @@ export default function GuidePage() {
 
       <Card className="py-4">
         <CardHeader>
-          <CardTitle className="text-xs tracking-widest uppercase">{t('guide.trouble.title')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('guide.trouble.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3">

@@ -56,14 +56,14 @@ export default function SceneCard({ scene, stage, retries, verdict, onClick }: S
       <Card className="gap-3 py-4 h-full">
         <CardHeader>
           <CardTitle>
-            <span className="text-sm tracking-wide">{t('sceneCard.scene', { n: scene.display_order + 1 })}</span>
+            <span className="text-sm">{t('sceneCard.scene', { n: scene.display_order + 1 })}</span>
           </CardTitle>
           <CardDescription>
-            <span className="text-[10px] tracking-wide">{stageTitleLabel(t, stage)} · {scene.duration ? `${scene.duration}s` : t('sceneCard.still')}</span>
+            <span className="text-[10px]">{stageTitleLabel(t, stage)} · {scene.duration ? `${scene.duration}s` : t('sceneCard.still')}</span>
           </CardDescription>
           <CardAction>
             <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] tracking-widest border"
+              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] border"
               style={{ borderColor: 'var(--border)', color: STATUS_COLORS[status] }}
             >
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLORS[status] }} />
@@ -81,7 +81,7 @@ export default function SceneCard({ scene, stage, retries, verdict, onClick }: S
             ) : (
               <>
                 <div className="absolute inset-0" style={{ background: STATUS_TINT[status] }} />
-                <span className="relative text-[10px] tracking-widest" style={{ color: 'var(--muted)' }}>
+                <span className="relative text-[10px]" style={{ color: 'var(--muted)' }}>
                   {status === 'PENDING' ? t('sceneCard.notGenerated') : status === 'FAILED' ? t('sceneCard.noOutput') : t('sceneCard.noPreview')}
                 </span>
               </>
@@ -95,10 +95,10 @@ export default function SceneCard({ scene, stage, retries, verdict, onClick }: S
               {prompt}
             </p>
           )}
-          <div className="flex items-center gap-2 mt-3 text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>
+          <div className="flex items-center gap-2 mt-3 text-[10px]" style={{ color: 'var(--muted)' }}>
             <span>{t('sceneCard.retries', { n: retries })}</span>
             {verdict && (
-              <span className="ml-auto uppercase" style={{ color: VERDICT_COLORS[verdict] ?? 'var(--muted)' }}>
+              <span className="ml-auto" style={{ color: VERDICT_COLORS[verdict] ?? 'var(--muted)' }}>
                 {verdict}
               </span>
             )}

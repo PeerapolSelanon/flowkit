@@ -11,6 +11,7 @@ import { sceneStageStatus, videoStageBreakdown } from '../lib/stageStats'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction } from '../components/ui/card'
 import { Progress } from '../components/ui/progress'
 import { Badge } from '../components/ui/badge'
+import HealthStrip from '../components/HealthStrip'
 
 type VideoWithProject = Video & { projectName: string; projectId: string }
 type T = (key: TranslationKey, params?: Record<string, string | number>) => string
@@ -125,20 +126,16 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* KPI cards */}
-      <div className="grid grid-cols-4 gap-3.5">
+      <HealthStrip />
+
+      {/* Secondary figures — quiet row under the health strip */}
+      <div className="grid grid-cols-4 gap-6 pb-5" style={{ borderBottom: '1px solid var(--border)' }}>
         {kpis.map(k => (
-          <Card key={k.id} className="py-4 gap-2">
-            <CardHeader>
-              <CardDescription className="text-[10px] tracking-widest">{t(k.labelKey)}</CardDescription>
-              <CardTitle>
-                <span className="text-2xl tracking-tight" style={{ color: k.color }}>{k.value}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{k.note}</span>
-            </CardContent>
-          </Card>
+          <div key={k.id} className="flex flex-col gap-1">
+            <span className="text-[12px]" style={{ color: 'var(--muted)' }}>{t(k.labelKey)}</span>
+            <span className="text-[28px] leading-none font-semibold tabular-nums" style={{ color: k.value > 0 ? k.color : 'var(--muted)' }}>{k.value}</span>
+            <span className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>{k.note}</span>
+          </div>
         ))}
       </div>
 
@@ -146,7 +143,7 @@ export default function DashboardPage() {
         {/* Throughput table */}
         <Card className="py-4">
           <CardHeader>
-            <CardTitle className="text-xs tracking-widest uppercase">{t('dashboard.throughput.title')}</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t('dashboard.throughput.title')}</CardTitle>
             <CardDescription className="text-[11px]">{t('dashboard.throughput.desc')}</CardDescription>
           </CardHeader>
           <CardContent>
@@ -158,14 +155,17 @@ export default function DashboardPage() {
                   <div key={r.video.id} className="flex items-center gap-3.5 cursor-pointer" onClick={() => navigate(`/projects/${r.video.projectId}?tab=videos`)}>
                     <div className="flex flex-col min-w-0" style={{ width: 160 }}>
                       <span className="text-[11px] truncate">{r.video.title}</span>
-                      <span className="text-[9px] tracking-wide truncate" style={{ color: 'var(--muted)' }}>{r.video.projectName}</span>
+                      <span className="text-[10px] truncate" style={{ color: 'var(--muted)' }}>{r.video.projectName}</span>
                     </div>
                     {(['image', 'video', 'upscale'] as const).map(stage => {
                       const c = r.breakdown[stage]
                       const pct = r.total > 0 ? Math.round((c.done / r.total) * 100) : 0
                       return (
-                        <div key={stage} className="flex flex-col gap-1" style={{ width: 76 }}>
-                          <span className="text-[10px]" style={{ color: pct === 100 ? 'var(--green)' : pct === 0 ? 'var(--muted)' : 'var(--yellow)' }}>{pct}%</span>
+                        <div key={stage} className="flex flex-col gap-1" style={{ width: 88 }}>
+                          <span className="text-[10px] flex justify-between">
+                            <span style={{ color: 'var(--muted)' }}>{t(`common.stageLower.${stage}` as TranslationKey)}</span>
+                            <span className="tabular-nums" style={{ color: pct === 100 ? 'var(--green)' : pct === 0 ? 'var(--muted)' : 'var(--yellow)' }}>{pct}%</span>
+                          </span>
                           <Progress value={pct} className="h-1" />
                         </div>
                       )
@@ -180,13 +180,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Needs attention */}
-        <Card className="py-4">
+        {/* Needs attention — only carries colour when there is something to act on */}
+        <Card className="py-4" style={attentionRows.length ? { boxShadow: 'inset 3px 0 0 var(--red)' } : undefined}>
           <CardHeader>
-            <CardTitle className="text-xs tracking-widest uppercase">{t('dashboard.attention.title')}</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t('dashboard.attention.title')}</CardTitle>
             <CardDescription className="text-[11px]">{t('dashboard.attention.desc')}</CardDescription>
             <CardAction>
-              <span className="text-[11px]" style={{ color: 'var(--red)' }}>{attentionRows.length}</span>
+              <span className="text-lg font-semibold tabular-nums" style={{ color: attentionRows.length ? 'var(--red)' : 'var(--muted)' }}>{attentionRows.length}</span>
             </CardAction>
           </CardHeader>
           <CardContent>
@@ -202,9 +202,9 @@ export default function DashboardPage() {
                     onClick={() => a.projectId && navigate(`/projects/${a.projectId}?tab=pipeline`)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] tracking-wide">{a.label}</span>
-                      <span className="text-[9px] tracking-widest" style={{ color: 'var(--red)' }}>{a.type}</span>
-                      <span className="ml-auto text-[9px]" style={{ color: 'var(--muted)' }}>{new Date(a.time).toLocaleTimeString()}</span>
+                      <span className="text-[11px]">{a.label}</span>
+                      <span className="text-[10px] font-mono" style={{ color: 'var(--red)' }}>{a.type}</span>
+                      <span className="ml-auto text-[10px] font-mono" style={{ color: 'var(--muted)' }}>{new Date(a.time).toLocaleTimeString()}</span>
                     </div>
                     {a.error && <span className="text-[10px] leading-snug" style={{ color: 'var(--muted)' }}>{a.error.slice(0, 140)}</span>}
                   </div>
@@ -218,9 +218,9 @@ export default function DashboardPage() {
       {/* Event stream */}
       <Card className="py-4">
         <CardHeader>
-          <CardTitle className="text-xs tracking-widest uppercase">{t('dashboard.events.title')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('dashboard.events.title')}</CardTitle>
           <CardAction>
-            <span className="text-[10px] tracking-wide cursor-pointer" style={{ color: 'var(--accent)' }} onClick={() => navigate('/logs')}>{t('dashboard.events.openLogs')}</span>
+            <span className="text-[10px] cursor-pointer" style={{ color: 'var(--accent)' }} onClick={() => navigate('/logs')}>{t('dashboard.events.openLogs')}</span>
           </CardAction>
         </CardHeader>
         <CardContent>
@@ -230,8 +230,8 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-1">
               {recentEvents.map((e, i) => (
                 <div key={i} className="flex gap-3.5 text-[11px] py-0.5">
-                  <span style={{ color: 'var(--muted)', width: 64, flexShrink: 0 }}>{new Date(e.timestamp).toLocaleTimeString()}</span>
-                  <span style={{ color: 'var(--accent)', width: 130, flexShrink: 0 }}>{e.type}</span>
+                  <span className="font-mono" style={{ color: 'var(--muted)', width: 72, flexShrink: 0 }}>{new Date(e.timestamp).toLocaleTimeString()}</span>
+                  <span className="font-mono" style={{ color: 'var(--accent)', width: 130, flexShrink: 0 }}>{e.type}</span>
                   <span style={{ color: 'var(--muted)' }}>{describeEvent(t, e, requests)}</span>
                 </div>
               ))}

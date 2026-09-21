@@ -180,7 +180,7 @@ export default function SettingsPage() {
 
       <Card className="py-4">
         <CardHeader>
-          <CardTitle className="text-xs tracking-widest uppercase">{t('settings.providers.title')}</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('settings.providers.title')}</CardTitle>
           <CardDescription className="text-[11px]">{t('settings.testHint')}</CardDescription>
           <CardAction>
             <Button variant="outline" size="sm" disabled={testing} onClick={runTest}>
@@ -203,7 +203,7 @@ export default function SettingsPage() {
                 </span>
                 {info.error && <span className="truncate" style={{ color: 'var(--muted)' }}>{info.error}</span>}
                 {name === data.active && (
-                  <span className="ml-auto text-[9px] tracking-widest flex-shrink-0" style={{ color: 'var(--accent)' }}>{t('settings.activeProvider')}</span>
+                  <span className="ml-auto text-[10px] flex-shrink-0" style={{ color: 'var(--accent)' }}>{t('settings.activeProvider')}</span>
                 )}
               </div>
             ))}
@@ -232,10 +232,10 @@ export default function SettingsPage() {
         return (
           <Card key={roleId} className="py-4">
             <CardHeader>
-              <CardTitle className="text-xs tracking-widest uppercase">{meta?.label ?? roleId}</CardTitle>
+              <CardTitle className="text-sm font-semibold">{meta?.label ?? roleId}</CardTitle>
               <CardDescription className="text-[11px]">{meta?.description ?? roleId}</CardDescription>
               <CardAction>
-                <span className="text-[9px] tracking-widest" style={{ color: dirty ? 'var(--yellow)' : 'var(--muted)' }}>
+                <span className="text-[10px]" style={{ color: dirty ? 'var(--yellow)' : 'var(--muted)' }}>
                   {dirty ? t('settings.unsaved') : t('settings.inSync')}
                 </span>
               </CardAction>
@@ -243,7 +243,7 @@ export default function SettingsPage() {
             <CardContent>
               <div className="grid gap-3.5 items-start" style={{ gridTemplateColumns: '1fr 1.6fr 1fr' }}>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] tracking-widest" style={{ color: 'var(--muted)' }}>{t('settings.field.agent')}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('settings.field.agent')}</span>
                   <select
                     value={draft.provider}
                     onChange={e => changeProvider(roleId, e.target.value)}
@@ -264,7 +264,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] tracking-widest" style={{ color: 'var(--muted)' }}>{t('settings.field.model')}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('settings.field.model')}</span>
                   <div className="flex items-center gap-1.5">
                     {custom ? (
                       <input
@@ -323,7 +323,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] tracking-widest" style={{ color: 'var(--muted)' }}>{t('settings.field.effort')}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('settings.field.effort')}</span>
                   <select
                     value={effortLocked ? DEFAULT_OPTION : draft.effort ?? DEFAULT_OPTION}
                     disabled={effortLocked}

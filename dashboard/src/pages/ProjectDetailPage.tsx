@@ -125,7 +125,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
           <div className="grid gap-4" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
             <Card className="py-4">
               <CardHeader>
-                <CardTitle className="text-xs tracking-widest uppercase">{t('projectDetail.card.projectFields')}</CardTitle>
+                <CardTitle className="text-sm font-semibold">{t('projectDetail.card.projectFields')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3.5">
@@ -135,7 +135,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
                     { label: t('projectDetail.field.story'), value: project.story ?? '', field: 'story', multiline: true },
                   ].map(f => (
                     <div key={f.field} className="flex flex-col gap-1">
-                      <span className="text-[9px] tracking-widest" style={{ color: 'var(--muted)' }}>{f.label}</span>
+                      <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{f.label}</span>
                       <div className="rounded-md px-2.5 py-2 text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                         <EditableText value={f.value} onSave={v => patchProject(f.field, v)} multiline={f.multiline} className="text-xs" />
                       </div>
@@ -148,7 +148,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
             <div className="flex flex-col gap-4">
               <Card className="py-4">
                 <CardHeader>
-                  <CardTitle className="text-xs tracking-widest uppercase">{t('projectDetail.card.narrator')}</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{t('projectDetail.card.narrator')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-1.5 text-[11px]">
@@ -161,7 +161,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
 
               <Card className="py-4">
                 <CardHeader>
-                  <CardTitle className="text-xs tracking-widest uppercase">{t('projectDetail.card.stageRollup')}</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{t('projectDetail.card.stageRollup')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-2.5">
@@ -170,7 +170,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
                       const pct = c.total > 0 ? Math.round((c.done / c.total) * 100) : 0
                       return (
                         <div key={key} className="grid items-center gap-2.5" style={{ gridTemplateColumns: '60px 1fr 50px' }}>
-                          <span className="text-[10px] tracking-wide uppercase" style={{ color: 'var(--text)' }}>{stageLowerLabel(t, key)}</span>
+                          <span className="text-[10px]" style={{ color: 'var(--text)' }}>{stageLowerLabel(t, key)}</span>
                           <Progress value={pct} className="h-1" />
                           <span className="text-[10px] text-right" style={{ color: 'var(--muted)' }}>{c.done}/{c.total}</span>
                         </div>
@@ -196,9 +196,9 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
                       {ch.reference_image_url ? (
                         <img src={ch.reference_image_url} alt={ch.name} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>{st === 'PROCESSING' ? t('projectDetail.character.generating') : t('projectDetail.character.noReference')}</span>
+                        <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{st === 'PROCESSING' ? t('projectDetail.character.generating') : t('projectDetail.character.noReference')}</span>
                       )}
-                      <span className="absolute top-2 left-2 flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[9px] tracking-wide" style={{ background: 'rgba(10,10,20,0.8)', color: STATUS_COLOR[st] }}>
+                      <span className="absolute top-2 left-2 flex items-center gap-1.5 px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'rgba(10,10,20,0.8)', color: STATUS_COLOR[st] }}>
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLOR[st] }} />{statusLabel(t, st)}
                       </span>
                     </div>
@@ -210,7 +210,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
                       <div className="text-[11px]" style={{ color: 'var(--muted)' }}>
                         <EditableText value={ch.description ?? ''} onSave={v => patchChar(ch.id, 'description', v)} multiline className="text-[11px]" />
                       </div>
-                      <span className="text-[9px] tracking-wide" style={{ color: 'var(--muted)' }}>{t('projectDetail.character.updated', { date: formatDate(ch.updated_at) })}</span>
+                      <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('projectDetail.character.updated', { date: formatDate(ch.updated_at) })}</span>
                     </div>
                   </Card>
                 )
@@ -249,7 +249,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
                         <TableRow key={v.id}>
                           <TableCell>
                             <div className="text-xs">{v.title}</div>
-                            <div className="text-[9px]" style={{ color: 'var(--muted)' }}>{v.id.slice(0, 8)}</div>
+                            <div className="text-[10px] font-mono" style={{ color: 'var(--muted)' }}>{v.id.slice(0, 8)}</div>
                           </TableCell>
                           <TableCell className="text-xs" style={{ color: 'var(--muted)' }}>{scenes.length}</TableCell>
                           <TableCell>
@@ -284,7 +284,7 @@ export default function ProjectDetailPage({ projectId, onBack }: Props) {
           ) : (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] tracking-widest" style={{ color: 'var(--muted)' }}>{t('projectDetail.pipeline.videoLabel')}</span>
+                <span className="text-[10px]" style={{ color: 'var(--muted)' }}>{t('projectDetail.pipeline.videoLabel')}</span>
                 {videos.map(v => (
                   <Button key={v.id} variant={v.id === pipelineVideoId ? 'default' : 'outline'} size="sm" onClick={() => setPipelineVideoId(v.id)}>
                     {v.title}

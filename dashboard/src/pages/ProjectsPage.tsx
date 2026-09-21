@@ -41,7 +41,7 @@ function ProjectCard({ project, progress, onClick, t }: { project: Project; prog
           <Badge variant="outline">{project.status}</Badge>
         </div>
         {progress && progress.total > 0 && (
-          <div className="mt-2 text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>
+          <div className="mt-2 text-[10px]" style={{ color: 'var(--muted)' }}>
             {(['image', 'video', 'upscale'] as const).map((k, i) => (
               <span key={k} style={{ color: progress[k] === progress.total ? 'var(--green)' : undefined }}>
                 {i > 0 && <span style={{ color: 'var(--muted)' }}> · </span>}
@@ -52,7 +52,7 @@ function ProjectCard({ project, progress, onClick, t }: { project: Project; prog
         )}
       </CardContent>
       <CardFooter>
-        <span className="text-[10px] tracking-wide" style={{ color: 'var(--muted)' }}>{t('projects.footer', { date: formatDate(project.created_at), id: project.id.slice(0, 8) })}</span>
+        <span className="text-[10px] font-mono" style={{ color: 'var(--muted)' }}>{t('projects.footer', { date: formatDate(project.created_at), id: project.id.slice(0, 8) })}</span>
       </CardFooter>
     </Card>
   )
