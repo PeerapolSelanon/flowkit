@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAPI } from '../../api/client'
-import { useWebSocketContext } from '../../api/useWebSocketContext'
+import { useReloadOnEvent } from '../../api/useReloadOnEvent'
 import { useTranslation } from '../../i18n/useTranslation'
 import type { TranslationKey } from '../../i18n/translations'
 import { statusLabel, stateLabel } from '../../i18n/labels'
@@ -50,7 +50,6 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [retryingSceneId, setRetryingSceneId] = useState<string | null>(null)
 
-  const { lastEvent } = useWebSocketContext()
 
   const load = useCallback(async () => {
     const [p, v, c, s, r] = await Promise.all([
@@ -69,14 +68,7 @@ export default function PipelineView({ projectId, videoId }: PipelineViewProps) 
 
   useEffect(() => { load() }, [load])
 
-  useEffect(() => {
-    if (!lastEvent) return
-    // The backend only ever emits 'request_update' (on PROCESSING/COMPLETED/FAILED transitions),
-    // 'worker_tick', and 'urls_refreshed' — any of them means something in this pipeline may have changed.
-    if (lastEvent.type === 'request_update' || lastEvent.type === 'urls_refreshed') {
-      load()
-    }
-  }, [lastEvent, load])
+  useReloadOnEvent(load)
 
   const videoRequests = requests.filter(r => r.video_id === videoId)
   const anyProcessing = videoRequests.some(r => r.status === 'PROCESSING')

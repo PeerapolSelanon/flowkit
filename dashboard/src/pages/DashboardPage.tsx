@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchAPI } from '../api/client'
 import { useWebSocketContext } from '../api/useWebSocketContext'
+import { useReloadOnEvent } from '../api/useReloadOnEvent'
 import { useTranslation } from '../i18n/useTranslation'
 import type { TranslationKey } from '../i18n/translations'
 import { stateLabel } from '../i18n/labels'
@@ -32,7 +33,7 @@ function describeEvent(t: T, e: WSEvent, requests: Request[]): string {
 export default function DashboardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { events, lastEvent } = useWebSocketContext()
+  const { events } = useWebSocketContext()
   const [projects, setProjects] = useState<Project[]>([])
   const [videosByProject, setVideosByProject] = useState<Record<string, Video[]>>({})
   const [scenesByVideo, setScenesByVideo] = useState<Record<string, Scene[]>>({})
@@ -66,10 +67,7 @@ export default function DashboardPage() {
 
   useEffect(() => { Promise.resolve().then(load) }, [load])
 
-  useEffect(() => {
-    if (!lastEvent) return
-    if (lastEvent.type === 'request_update' || lastEvent.type === 'urls_refreshed') Promise.resolve().then(load)
-  }, [lastEvent, load])
+  useReloadOnEvent(load)
 
   if (loading) {
     return <div className="text-xs" style={{ color: 'var(--muted)' }}>{t('dashboard.loading')}</div>

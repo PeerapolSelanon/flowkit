@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { fetchAPI } from '../api/client'
+import { useReloadOnEvent } from '../api/useReloadOnEvent'
 import type { Project } from '../types'
 import ProjectDetailPage from './ProjectDetailPage'
 import { useTranslation } from '../i18n/useTranslation'
@@ -72,8 +73,11 @@ export default function ProjectsPage() {
       .then(setProjects)
       .catch(console.error)
       .finally(() => setLoading(false))
-    fetchAPI<Record<string, Progress>>('/api/projects/progress').then(setProgress).catch(console.error)
   }, [])
+
+  const loadProgress = useCallback(() => fetchAPI<Record<string, Progress>>('/api/projects/progress').then(setProgress).catch(console.error), [])
+  useEffect(() => { loadProgress() }, [loadProgress])
+  useReloadOnEvent(loadProgress)
 
   // If there's an :id param, show detail page
   if (id) {

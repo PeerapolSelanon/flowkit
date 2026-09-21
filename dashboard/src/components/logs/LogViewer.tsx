@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fetchAPI } from '../../api/client'
-import { useWebSocketContext } from '../../api/useWebSocketContext'
+import { useReloadOnEvent } from '../../api/useReloadOnEvent'
 import { useTranslation } from '../../i18n/useTranslation'
 import { statusLabel } from '../../i18n/labels'
 import type { Request, Character, StatusType } from '../../types'
@@ -19,7 +19,6 @@ interface LogRow {
 
 export default function LogViewer() {
   const { t } = useTranslation()
-  const { lastEvent } = useWebSocketContext()
   const [requests, setRequests] = useState<Request[]>([])
   const [characters, setCharacters] = useState<Character[]>([])
   const [query, setQuery] = useState('')
@@ -38,10 +37,7 @@ export default function LogViewer() {
 
   useEffect(() => { Promise.resolve().then(load) }, [load])
 
-  useEffect(() => {
-    if (paused || !lastEvent) return
-    if (lastEvent.type === 'request_update' || lastEvent.type === 'urls_refreshed') Promise.resolve().then(load)
-  }, [lastEvent, paused, load])
+  useReloadOnEvent(load, { enabled: !paused })
 
   const charIndex = new Map(characters.map(c => [c.id, c.name]))
 
