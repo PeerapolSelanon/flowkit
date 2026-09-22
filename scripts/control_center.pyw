@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tkinter as tk
+import tkinter.font as tkfont
 import urllib.request
 import webbrowser
 from pathlib import Path
@@ -22,11 +23,30 @@ VENV_PY = ROOT / "venv" / "Scripts" / "python.exe"
 PY = f'"{VENV_PY}"' if VENV_PY.exists() else "uv run --python 3.11 --with-requirements requirements.txt python"
 NPM = shutil.which("npm.cmd") or shutil.which("npm") or "npm"
 
-# Same palette as dashboard/src/index.css
-BG, CARD, BORDER = "#0b0d14", "#151a26", "#232a3b"
-TEXT, MUTED, ACCENT = "#e6e9f2", "#7c849c", "#6c8cff"
-GREEN, RED, ORANGE = "#2ecc71", "#e74c3c", "#e67e22"
-FONT = "Segoe UI"
+# Same tokens as dashboard/src/index.css and extension/theme.css (tk needs opaque hex, so the
+# translucent lines/soft fills are pre-blended against their surface).
+BG, SURFACE, CARD, CARD2 = "#0b0c10", "#101218", "#151821", "#1b1f2a"
+LINE, LINE_STRONG = "#1e2129", "#2a2e38"
+TEXT, TEXT2, MUTED = "#eceef3", "#aab0bf", "#6e7484"
+ACCENT, ACCENT_INK, ACCENT_SOFT = "#a394ff", "#0b0c10", "#262640"
+OK, OK_SOFT = "#3ddc84", "#17301f"
+FAIL, FAIL_SOFT = "#ff6b6b", "#3a1e21"
+BUSY, BUSY_SOFT = "#f5b73d", "#3a2f18"
+
+
+def pick_font():
+    """IBM Plex Sans Thai when it is installed (the dashboard's face), else Segoe UI."""
+    try:
+        families = set(tkfont.families())
+    except Exception:
+        return "Segoe UI"
+    for name in ("IBM Plex Sans Thai", "IBM Plex Sans", "Segoe UI"):
+        if name in families:
+            return name
+    return "Segoe UI"
+
+
+MONO = "Cascadia Code"
 
 
 def dashboard_cmd():
@@ -73,57 +93,66 @@ def health():
         return None
 
 
-def button(parent, text, command, bg=CARD, fg=TEXT, width=8, bold=False):
-    b = tk.Button(parent, text=text, command=command, width=width, bg=bg, fg=fg, relief="flat", bd=0,
-                  cursor="hand2", font=(FONT, 9, "bold" if bold else "normal"), padx=6, pady=5,
-                  activebackground=BORDER if bg == CARD else bg, activeforeground=fg,
-                  highlightthickness=1, highlightbackground=BORDER, highlightcolor=BORDER)
-    return b
-
-
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.font = pick_font()
         self.title("Flow Kit Control Center")
         self.configure(bg=BG)
         self.resizable(False, False)
 
+        # ── header: brand mark + name + start/stop all ─────────────────────────
         head = tk.Frame(self, bg=BG)
-        head.pack(fill="x", padx=20, pady=(18, 10))
-        tk.Label(head, text="F", bg=ACCENT, fg=BG, font=(FONT, 11, "bold"), width=2).pack(side="left", padx=(0, 10))
-        tk.Label(head, text="FLOW KIT", bg=BG, fg=TEXT, font=(FONT, 11, "bold")).pack(side="left")
-        tk.Label(head, text="control center", bg=BG, fg=MUTED, font=(FONT, 9)).pack(side="left", padx=8)
-        self.stop_all_btn = button(head, "■  Stop all", self.stop_all, bg=CARD, fg=RED, width=10, bold=True)
+        head.pack(fill="x", padx=22, pady=(20, 12))
+        tk.Label(head, text="F", bg=ACCENT, fg=ACCENT_INK, font=(self.font, 11, "bold"), width=3, pady=2).pack(side="left", padx=(0, 10))
+        title = tk.Frame(head, bg=BG)
+        title.pack(side="left")
+        tk.Label(title, text="Flow Kit", bg=BG, fg=TEXT, font=(self.font, 12, "bold"), anchor="w").pack(anchor="w")
+        tk.Label(title, text="control center", bg=BG, fg=MUTED, font=(self.font, 9), anchor="w").pack(anchor="w")
+        self.stop_all_btn = self.button(head, "■  Stop all", self.stop_all, kind="ghost", fg=FAIL, width=10)
         self.stop_all_btn.pack(side="right", padx=(6, 0))
-        self.start_all_btn = button(head, "▶  Start all", self.start_all, bg=ACCENT, fg=BG, width=11, bold=True)
+        self.start_all_btn = self.button(head, "▶  Start all", self.start_all, kind="primary", width=11)
         self.start_all_btn.pack(side="right")
 
+        # ── one card per server ──────────────────────────────────────────────
         self.rows = []
         for name, port, cmd, url in SERVERS:
-            card = tk.Frame(self, bg=CARD, highlightthickness=1, highlightbackground=BORDER)
-            card.pack(fill="x", padx=20, pady=4)
-            dot = tk.Label(card, text="●", bg=CARD, fg=MUTED, font=(FONT, 13))
-            dot.pack(side="left", padx=(14, 8), pady=12)
+            card = tk.Frame(self, bg=CARD, highlightthickness=1, highlightbackground=LINE, highlightcolor=LINE)
+            card.pack(fill="x", padx=22, pady=4)
+            dot = tk.Label(card, text="●", bg=CARD, fg=MUTED, font=(self.font, 12))
+            dot.pack(side="left", padx=(14, 8), pady=13)
             txt = tk.Frame(card, bg=CARD)
             txt.pack(side="left")
-            tk.Label(txt, text=name, bg=CARD, fg=TEXT, font=(FONT, 10, "bold"), anchor="w").pack(anchor="w")
-            state = tk.Label(txt, text=f"localhost:{port}", bg=CARD, fg=MUTED, font=(FONT, 8), anchor="w")
+            tk.Label(txt, text=name, bg=CARD, fg=TEXT, font=(self.font, 10, "bold"), anchor="w").pack(anchor="w")
+            state = tk.Label(txt, text=f"localhost:{port}", bg=CARD, fg=MUTED, font=(MONO, 8), anchor="w")
             state.pack(anchor="w")
-            button(card, "Open", lambda u=url: webbrowser.open(u), width=6).pack(side="right", padx=(4, 12))
-            button(card, "Restart", lambda p=port, n=name, c=cmd: self.restart(n, p, c)).pack(side="right", padx=4)
-            btn = button(card, "Start", None)
+            self.button(card, "Open", lambda u=url: webbrowser.open(u), kind="ghost", width=6).pack(side="right", padx=(4, 12))
+            self.button(card, "Restart", lambda p=port, n=name, c=cmd: self.restart(n, p, c), kind="ghost").pack(side="right", padx=4)
+            btn = self.button(card, "Start", None, kind="ghost")
             btn.pack(side="right", padx=4)
             self.rows.append((name, port, cmd, dot, state, btn))
 
+        # ── footer: extension status + logs link ─────────────────────────────
         foot = tk.Frame(self, bg=BG)
-        foot.pack(fill="x", padx=20, pady=(10, 16))
-        self.ext_dot = tk.Label(foot, text="●", bg=BG, fg=MUTED, font=(FONT, 10))
-        self.ext_dot.pack(side="left", padx=(4, 6))
-        self.ext = tk.Label(foot, text="", bg=BG, fg=MUTED, font=(FONT, 9), anchor="w")
-        self.ext.pack(side="left")
-        tk.Label(foot, text="logs", bg=BG, fg=ACCENT, font=(FONT, 9, "underline"), cursor="hand2").pack(side="right")
-        foot.winfo_children()[-1].bind("<Button-1>", lambda e: os.startfile(LOGS))
+        foot.pack(fill="x", padx=22, pady=(12, 18))
+        self.ext_pill = tk.Label(foot, text="●  checking", bg=CARD2, fg=MUTED, font=(self.font, 9), padx=10, pady=3)
+        self.ext_pill.pack(side="left")
+        logs = tk.Label(foot, text="open logs", bg=BG, fg=ACCENT, font=(self.font, 9, "underline"), cursor="hand2")
+        logs.pack(side="right")
+        logs.bind("<Button-1>", lambda e: os.startfile(LOGS))
         self.tick()
+
+    def button(self, parent, text, command, kind="ghost", fg=None, width=8):
+        """kind: 'primary' (accent fill) or 'ghost' (surface with a line)."""
+        primary = kind == "primary"
+        bg = ACCENT if primary else CARD2
+        fg = fg or (ACCENT_INK if primary else TEXT)
+        b = tk.Button(parent, text=text, command=command, width=width, bg=bg, fg=fg, relief="flat", bd=0,
+                      cursor="hand2", font=(self.font, 9, "bold" if primary else "normal"), padx=6, pady=5,
+                      activebackground=ACCENT if primary else LINE_STRONG, activeforeground=fg,
+                      highlightthickness=1, highlightbackground=ACCENT if primary else LINE_STRONG,
+                      highlightcolor=ACCENT if primary else LINE_STRONG, disabledforeground=MUTED)
+        return b
 
     def start_all(self):
         for name, port, cmd, *_ in self.rows:
@@ -144,20 +173,21 @@ class App(tk.Tk):
             up = pid_on_port(port) is not None
             all_up &= up
             any_up |= up
-            dot.config(fg=GREEN if up else RED)
-            state.config(text=f"localhost:{port}  ·  {'running' if up else 'stopped'}", fg=GREEN if up else MUTED)
-            btn.config(text="Stop" if up else "Start", fg=RED if up else GREEN,
+            dot.config(fg=OK if up else FAIL)
+            state.config(text=f"localhost:{port}  ·  {'running' if up else 'stopped'}", fg=OK if up else MUTED)
+            btn.config(text="Stop" if up else "Start", fg=FAIL if up else OK,
                        command=(lambda p=port: stop(p)) if up else (lambda n=name, c=cmd: start(n, c())))
-        self.start_all_btn.config(state="disabled" if all_up else "normal", bg=BORDER if all_up else ACCENT,
-                                  fg=MUTED if all_up else BG)
-        self.stop_all_btn.config(state="normal" if any_up else "disabled", fg=RED if any_up else MUTED)
+        self.start_all_btn.config(state="disabled" if all_up else "normal",
+                                  bg=CARD2 if all_up else ACCENT, fg=MUTED if all_up else ACCENT_INK,
+                                  highlightbackground=LINE_STRONG if all_up else ACCENT)
+        self.stop_all_btn.config(state="normal" if any_up else "disabled", fg=FAIL if any_up else MUTED)
         h = health()
         if h is None:
-            self.ext_dot.config(fg=MUTED); self.ext.config(text="API not answering yet", fg=MUTED)
+            self.ext_pill.config(text="●  API not answering yet", bg=CARD2, fg=MUTED)
         elif h.get("extension_connected"):
-            self.ext_dot.config(fg=GREEN); self.ext.config(text="Extension connected · ready to work", fg=GREEN)
+            self.ext_pill.config(text="●  Extension connected · ready to work", bg=OK_SOFT, fg=OK)
         else:
-            self.ext_dot.config(fg=ORANGE); self.ext.config(text="Extension not connected · open a signed-in flow.google.com tab", fg=ORANGE)
+            self.ext_pill.config(text="●  Extension not connected · open a signed-in flow.google.com tab", bg=BUSY_SOFT, fg=BUSY)
         self.after(2000, self.tick)
 
 
