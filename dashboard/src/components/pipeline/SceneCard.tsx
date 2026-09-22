@@ -1,9 +1,10 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent } from '../ui/card'
-import type { Scene, StatusType } from '../../types'
+import { Link2, CornerDownRight, RotateCcw, Clock } from 'lucide-react'
+import type { Scene } from '../../types'
 import { useTranslation } from '../../i18n/useTranslation'
-import { statusLabel, stageTitleLabel } from '../../i18n/labels'
-
-export type SceneStage = 'image' | 'video' | 'upscale'
+import { statusLabel, stageTitleLabel, chainLabel } from '../../i18n/labels'
+import { sceneStageStatus, type SceneStage } from '../../lib/stageStats'
+import Thumb from '../common/Thumb'
+import { Dot } from '../common/status'
 
 interface SceneCardProps {
   scene: Scene
@@ -13,98 +14,44 @@ interface SceneCardProps {
   onClick: () => void
 }
 
-const STATUS_COLORS: Record<StatusType, string> = {
-  COMPLETED: 'var(--green)',
-  PROCESSING: 'var(--yellow)',
-  PENDING: 'var(--muted)',
-  FAILED: 'var(--red)',
-}
-
-const STATUS_TINT: Record<StatusType, string> = {
-  COMPLETED: 'linear-gradient(135deg, rgba(34,197,94,.07), rgba(59,130,246,.05))',
-  PROCESSING: 'linear-gradient(135deg, rgba(245,158,11,.10), rgba(245,158,11,.02))',
-  FAILED: 'linear-gradient(135deg, rgba(239,68,68,.10), rgba(239,68,68,.02))',
-  PENDING: 'none',
-}
-
-const VERDICT_COLORS: Record<string, string> = {
-  excellent: 'var(--green)',
-  good: 'var(--green)',
-  acceptable: 'var(--yellow)',
-  poor: 'var(--red)',
-  unusable: 'var(--red)',
-}
-
-function getStageStatus(scene: Scene, stage: SceneStage): StatusType {
-  if (stage === 'image') return scene.vertical_image_status !== 'PENDING' ? scene.vertical_image_status : scene.horizontal_image_status
-  if (stage === 'video') return scene.vertical_video_status !== 'PENDING' ? scene.vertical_video_status : scene.horizontal_video_status
-  return scene.vertical_upscale_status !== 'PENDING' ? scene.vertical_upscale_status : scene.horizontal_upscale_status
-}
-
-function getThumbUrl(scene: Scene): string | null {
-  return scene.vertical_image_url || scene.horizontal_image_url
+const VERDICT_TONE: Record<string, string> = {
+  excellent: 'var(--ok)', good: 'var(--ok)', acceptable: 'var(--busy)', poor: 'var(--fail)', unusable: 'var(--fail)',
 }
 
 export default function SceneCard({ scene, stage, retries, verdict, onClick }: SceneCardProps) {
   const { t } = useTranslation()
-  const status = getStageStatus(scene, stage)
-  const thumbUrl = getThumbUrl(scene)
+  const status = sceneStageStatus(scene, stage)
+  const thumbUrl = scene.vertical_image_url || scene.horizontal_image_url
   const prompt = stage === 'video' ? scene.video_prompt : (scene.image_prompt ?? scene.prompt)
+  const ChainIcon = scene.chain_type === 'CONTINUATION' ? Link2 : scene.chain_type === 'INSERT' ? CornerDownRight : null
 
   return (
-    <button onClick={onClick} className="text-left w-full">
-      <Card className="gap-3 py-4 h-full">
-        <CardHeader>
-          <CardTitle>
-            <span className="text-sm">{t('sceneCard.scene', { n: scene.display_order + 1 })}</span>
-          </CardTitle>
-          <CardDescription>
-            <span className="text-[10px]">{stageTitleLabel(t, stage)} · {scene.duration ? `${scene.duration}s` : t('sceneCard.still')}</span>
-          </CardDescription>
-          <CardAction>
-            <span
-              className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] border"
-              style={{ borderColor: 'var(--border)', color: STATUS_COLORS[status] }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLORS[status] }} />
-              {statusLabel(t, status)}
-            </span>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          <div
-            className="relative flex items-center justify-center overflow-hidden rounded-md"
-            style={{ aspectRatio: '16/9', background: 'var(--surface)', border: '1px solid var(--border)' }}
-          >
-            {thumbUrl ? (
-              <img src={thumbUrl} alt={t('sceneCard.scene', { n: scene.display_order + 1 })} className="w-full h-full object-cover" />
-            ) : (
-              <>
-                <div className="absolute inset-0" style={{ background: STATUS_TINT[status] }} />
-                <span className="relative text-[10px]" style={{ color: 'var(--muted)' }}>
-                  {status === 'PENDING' ? t('sceneCard.notGenerated') : status === 'FAILED' ? t('sceneCard.noOutput') : t('sceneCard.noPreview')}
-                </span>
-              </>
-            )}
-          </div>
-          {prompt && (
-            <p
-              className="mt-3 text-[11px] leading-snug overflow-hidden"
-              style={{ color: 'var(--muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-            >
-              {prompt}
-            </p>
-          )}
-          <div className="flex items-center gap-2 mt-3 text-[10px]" style={{ color: 'var(--muted)' }}>
-            <span>{t('sceneCard.retries', { n: retries })}</span>
-            {verdict && (
-              <span className="ml-auto" style={{ color: VERDICT_COLORS[verdict] ?? 'var(--muted)' }}>
-                {verdict}
-              </span>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+    <button type="button" onClick={onClick} className="fk-scene" data-s={status}>
+      <Thumb
+        src={thumbUrl}
+        alt={t('sceneCard.scene', { n: scene.display_order + 1 })}
+        status={status}
+        emptyLabel={status === 'PENDING' ? t('sceneCard.notGenerated') : status === 'FAILED' ? t('sceneCard.noOutput') : status === 'PROCESSING' ? t('common.status.processing') : t('sceneCard.noPreview')}
+      >
+        <div className="fk-thumb-shade" />
+        <span className="fk-corner left-2.5 top-2.5 font-medium">#{scene.display_order + 1}</span>
+        <span className="fk-corner right-2.5 top-2.5"><Dot state={status} />{statusLabel(t, status)}</span>
+        <span className="absolute left-2.5 bottom-2.5 flex items-center gap-2 text-[11px] text-fg-2">
+          <span className="flex items-center gap-1"><Clock size={11} />{scene.duration ? `${scene.duration}s` : t('sceneCard.still')}</span>
+          {ChainIcon && <span className="flex items-center gap-1"><ChainIcon size={11} />{chainLabel(t, scene.chain_type)}</span>}
+        </span>
+      </Thumb>
+      <div className="fk-scene-body">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[12px] font-medium">{stageTitleLabel(t, stage)}</span>
+          {verdict && <span className="text-[11px] font-medium" style={{ color: VERDICT_TONE[verdict] ?? 'var(--fg-2)' }}>{verdict}</span>}
+        </div>
+        {prompt && <p className="fk-scene-prompt">{prompt}</p>}
+        <div className="fk-scene-meta">
+          {retries > 0 && <span className="flex items-center gap-1" style={{ color: 'var(--busy)' }}><RotateCcw size={11} />{t('sceneCard.retries', { n: retries })}</span>}
+          <span className="ml-auto font-mono text-[10px]">{scene.id.slice(0, 8)}</span>
+        </div>
+      </div>
     </button>
   )
 }

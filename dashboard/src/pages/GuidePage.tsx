@@ -1,40 +1,32 @@
 import { useState, useEffect } from 'react'
+import { ExternalLink, LifeBuoy, Puzzle } from 'lucide-react'
 import { fetchAPI } from '../api/client'
 import { useTranslation } from '../i18n/useTranslation'
 import type { TranslationKey } from '../i18n/translations'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../components/ui/accordion'
+import { Button } from '../components/ui/button'
+import Panel from '../components/common/Panel'
+import { Dot, Pill } from '../components/common/status'
 
 interface HealthResponse {
   status: string
   version: string
   extension_connected: boolean
-  ws: {
-    connected: boolean
-    active_connections: number
-    authenticated_connections: number
-    connects: number
-    disconnects: number
-    uptime_s: number | null
-  }
+  ws: { connected: boolean; active_connections: number; authenticated_connections: number; connects: number; disconnects: number; uptime_s: number | null }
 }
 
 function useHealthPoll() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [reachable, setReachable] = useState(true)
-
   useEffect(() => {
     let cancelled = false
-    function poll() {
-      fetchAPI<HealthResponse>('/health')
-        .then(h => { if (!cancelled) { setHealth(h); setReachable(true) } })
-        .catch(() => { if (!cancelled) { setHealth(null); setReachable(false) } })
-    }
+    const poll = () => fetchAPI<HealthResponse>('/health')
+      .then(h => { if (!cancelled) { setHealth(h); setReachable(true) } })
+      .catch(() => { if (!cancelled) { setHealth(null); setReachable(false) } })
     Promise.resolve().then(poll)
     const id = setInterval(poll, 4000)
     return () => { cancelled = true; clearInterval(id) }
   }, [])
-
   return { health, reachable }
 }
 
@@ -44,100 +36,83 @@ const STEP_KEYS: { titleKey: TranslationKey; bodyKey: TranslationKey }[] = [
   { titleKey: 'guide.step3.title', bodyKey: 'guide.step3.body' },
   { titleKey: 'guide.step4.title', bodyKey: 'guide.step4.body' },
 ]
+const TROUBLE_KEYS: { problemKey: TranslationKey; solutionKey: TranslationKey }[] = [1, 2, 3, 4, 5, 6].map(i => ({ problemKey: `guide.trouble${i}.problem` as TranslationKey, solutionKey: `guide.trouble${i}.solution` as TranslationKey }))
 
-const TROUBLE_KEYS: { problemKey: TranslationKey; solutionKey: TranslationKey }[] = [
-  { problemKey: 'guide.trouble1.problem', solutionKey: 'guide.trouble1.solution' },
-  { problemKey: 'guide.trouble2.problem', solutionKey: 'guide.trouble2.solution' },
-  { problemKey: 'guide.trouble3.problem', solutionKey: 'guide.trouble3.solution' },
-  { problemKey: 'guide.trouble4.problem', solutionKey: 'guide.trouble4.solution' },
-  { problemKey: 'guide.trouble5.problem', solutionKey: 'guide.trouble5.solution' },
-  { problemKey: 'guide.trouble6.problem', solutionKey: 'guide.trouble6.solution' },
-]
+/** Wrap anything that looks like a command, URL or path in <code>. */
+function richText(text: string) {
+  const parts = text.split(/(chrome:\/\/[\w/.-]+|https?:\/\/[^\s)]+|python -m agent\.main|curl [^\s]+|source [^\s]+|\.\/setup\.sh|extension\/|"[^"]+")/g)
+  return parts.map((p, i) => (i % 2 === 1 ? <code key={i}>{p}</code> : p))
+}
+
+function uptime(s: number | null): string {
+  if (s === null) return '—'
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
 
 export default function GuidePage() {
   const { t } = useTranslation()
   const { health, reachable } = useHealthPoll()
 
   return (
-    <div className="flex flex-col gap-5 max-w-3xl">
+    <div className="fk-page fk-fade" style={{ maxWidth: 880 }}>
       <div>
-        <h1 className="m-0 text-lg font-semibold" style={{ color: 'var(--text)' }}>{t('guide.title')}</h1>
-        <p className="text-[11px] mt-1" style={{ color: 'var(--muted)' }}>{t('guide.intro')}</p>
+        <h1 className="fk-title">{t('guide.title')}</h1>
+        <p className="fk-lede">{t('guide.intro')}</p>
       </div>
 
-      <Card className="py-4">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">{t('guide.status.title')}</CardTitle>
-          <CardDescription className="text-[11px]">{t('guide.status.desc')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!reachable ? (
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--red)' }}>
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--red)' }} />
-              {t('guide.status.unreachable')}
+      <Panel title={t('guide.status.title')} sub={t('guide.status.desc')} action={health && <Pill state="outline">v{health.version}</Pill>}>
+        {!reachable ? (
+          <div className="flex items-center gap-2 text-[13px] text-fail"><Dot state="down" />{richText(t('guide.status.unreachable'))}</div>
+        ) : !health ? (
+          <div className="text-[12px] text-fg-muted">{t('guide.status.checking')}</div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="fk-inset px-3.5 py-3 flex flex-col gap-1">
+              <span className="flex items-center gap-2 text-[13px]"><Dot state="ok" />{t('guide.status.agentRunning')}</span>
+              <span className="text-[11px] text-fg-muted">{t('guide.status.uptime', { t: uptime(health.ws.uptime_s) })}</span>
             </div>
-          ) : !health ? (
-            <div className="text-xs" style={{ color: 'var(--muted)' }}>{t('guide.status.checking')}</div>
-          ) : (
-            <div className="flex flex-wrap gap-6">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />
-                <span className="text-xs" style={{ color: 'var(--text)' }}>{t('guide.status.agentRunning')}</span>
-                <Badge variant="outline">v{health.version}</Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: health.extension_connected ? 'var(--green)' : 'var(--red)' }} />
-                <span className="text-xs" style={{ color: health.extension_connected ? 'var(--green)' : 'var(--red)' }}>
-                  {health.extension_connected ? t('guide.status.extensionConnected') : t('guide.status.extensionDisconnected')}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: health.ws.authenticated_connections > 0 ? 'var(--green)' : 'var(--muted)' }} />
-                <span className="text-xs" style={{ color: 'var(--muted)' }}>
-                  {t('guide.status.ws', { active: health.ws.active_connections, authenticated: health.ws.authenticated_connections })}
-                </span>
-              </div>
+            <div className="fk-inset px-3.5 py-3 flex flex-col gap-1">
+              <span className="flex items-center gap-2 text-[13px]" style={{ color: health.extension_connected ? 'var(--ok)' : 'var(--fail)' }}>
+                <Dot state={health.extension_connected ? 'ok' : 'down'} />{health.extension_connected ? t('guide.status.extensionConnected') : t('guide.status.extensionDisconnected')}
+              </span>
+              <span className="text-[11px] text-fg-muted">{t('health.signal.extension')}</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-col gap-3">
-        {STEP_KEYS.map((s, i) => (
-          <Card key={s.titleKey} className="py-4">
-            <CardContent>
-              <div className="flex gap-3.5">
-                <span
-                  className="flex-shrink-0 flex items-center justify-center rounded-full text-xs font-semibold"
-                  style={{ width: 22, height: 22, background: 'var(--accent)', color: 'var(--bg)' }}
-                >
-                  {i + 1}
-                </span>
-                <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{t(s.titleKey)}</span>
-                  <span className="text-[11px] leading-relaxed" style={{ color: 'var(--muted)' }}>{t(s.bodyKey)}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="py-4">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">{t('guide.trouble.title')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-3">
-            {TROUBLE_KEYS.map(tr => (
-              <div key={tr.problemKey} className="flex flex-col gap-0.5 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{t(tr.problemKey)}</span>
-                <span className="text-[11px]" style={{ color: 'var(--muted)' }}>{t(tr.solutionKey)}</span>
-              </div>
-            ))}
+            <div className="fk-inset px-3.5 py-3 flex flex-col gap-1">
+              <span className="flex items-center gap-2 text-[13px]"><Dot state={health.ws.authenticated_connections > 0 ? 'ok' : 'unknown'} />{t('guide.status.ws', { active: health.ws.active_connections, authenticated: health.ws.authenticated_connections })}</span>
+              <span className="text-[11px] text-fg-muted">WebSocket</span>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </Panel>
+
+      <Panel title={t('guide.steps.title')} action={<Puzzle size={15} className="text-fg-muted" />}>
+        <ol className="fk-steps m-0 p-0 list-none">
+          {STEP_KEYS.map((s, i) => (
+            <li key={s.titleKey} className="fk-step">
+              <span className="fk-step-n">{i + 1}</span>
+              <div>
+                <h3>{t(s.titleKey)}</h3>
+                <p>{richText(t(s.bodyKey))}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="flex flex-wrap gap-2 pt-4 mt-2 border-t border-line">
+          <Button variant="outline" size="sm" asChild><a href="https://flow.google.com/" target="_blank" rel="noreferrer"><ExternalLink /> {t('health.openFlow')}</a></Button>
+        </div>
+      </Panel>
+
+      <Panel title={t('guide.trouble.title')} action={<LifeBuoy size={15} className="text-fg-muted" />}>
+        <Accordion type="multiple">
+          {TROUBLE_KEYS.map(tr => (
+            <AccordionItem key={tr.problemKey} value={tr.problemKey}>
+              <AccordionTrigger><span className="text-[13px] font-medium text-left">{t(tr.problemKey)}</span></AccordionTrigger>
+              <AccordionContent><p className="m-0 text-[12.5px] text-fg-2 leading-relaxed">{richText(t(tr.solutionKey))}</p></AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </Panel>
     </div>
   )
 }
