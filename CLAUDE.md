@@ -28,8 +28,9 @@ page can sign a Flow request, so nothing works headless.
 Flow lives at `flow.google.com` and signs every call in the page. Consequences
 that change how you work:
 
-- **Projects are not created by Flow Kit any more.** Make one in the Flow UI and
-  pin its uuid as `FLOW_PROJECT_ID`, or pass `flow_project_id` to `POST /api/projects`.
+- **`POST /api/projects` creates a real Flow project** (`jHPbke`) unless you pass
+  `flow_project_id` to reuse one. Ad-hoc `/api/flow/*` calls without a project share
+  a leased session project (`flow_session_project.json`, rotates when idle).
 - **Two capabilities are unported**, both on the Veo path, because their
   payloads were never captured: Veo r2v and Veo start+end-frame chaining. They fail with
   `UNSUPPORTED_ON_BATCH_API` rather than silently producing the wrong thing.
