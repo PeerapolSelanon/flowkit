@@ -193,6 +193,24 @@ async def extension_status():
     }
 
 
+@router.post("/clear-hijack")
+async def clear_hijack_cooldown():
+    """Reset the generation cooldown triggered by extension_hijack_detected.
+
+    Call this after deploying the bypass fix to immediately resume generation
+    without waiting for the cooldown to expire.
+    """
+    import time as _time
+    client = get_flow_client()
+    old_until = client._generation_unusual_until
+    client._generation_unusual_until = 0.0
+    was_active = old_until > 0.0 and old_until > _time.monotonic()
+    return {
+        "cleared": True,
+        "was_active": was_active,
+    }
+
+
 @router.get("/credits")
 async def get_credits():
     """Get user credits from Google Flow."""
@@ -424,7 +442,28 @@ async def check_omni_status(body: CheckOmniStatusRequest):
 
 @router.post("/refresh-urls/{project_id}")
 async def refresh_project_urls(project_id: str):
-    """Bulk refresh all media URLs for a project via per-media get_media calls."""
+    """Bulk refresh all media URLs for a project via per-media get_media calls.
+
+    Provider-neutral no-op: when every stored URL is local (file://), there is
+    nothing to re-sign and the extension is not required.
+    """
+    from agent.db import crud
+
+    urls: list[str] = []
+    for video in await crud.list_videos(project_id):
+        for scene in await crud.list_scenes(video["id"]):
+            for k, v in scene.items():
+                if k.endswith("_url") and v:
+                    urls.append(v)
+    for char in await crud.get_project_characters(project_id):
+        for k, v in char.items():
+            if k.endswith("_url") and v:
+                urls.append(v)
+
+    if not any(u.startswith("http") for u in urls):
+        return {"refreshed": 0, "found": len(urls),
+                "skipped": "no remote media URLs (all local or none); nothing to refresh"}
+
     client = get_flow_client()
     if not client.connected:
         raise HTTPException(503, "Extension not connected")

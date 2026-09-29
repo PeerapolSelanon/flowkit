@@ -1,8 +1,4 @@
 <p align="center">
-  <img src="docs/images/flowkit_banner.svg" width="720" alt="FLOW KIT" />
-</p>
-
-<p align="center">
   <a href="#license"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"/></a>
   <img src="https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white" alt="Python 3.10+"/>
   <img src="https://img.shields.io/badge/Chrome-MV3-4285F4?logo=googlechrome&logoColor=white" alt="Chrome MV3"/>
@@ -39,15 +35,54 @@
 
 Standalone system to generate AI videos via Google Flow. Uses a Chrome extension as a browser bridge: it mints reCAPTCHA and runs Flow's batchexecute RPCs inside a signed-in `flow.google.com` tab, which is the only place they can be signed.
 
+## AI Agent Support
+
+<p align="center">
+  <img src="docs/agents/v2/muse.svg" height="56" alt="Muse" title="Muse" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/agents/v2/claude.svg" height="56" alt="Claude Code" title="Claude Code" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/agents/v2/codex.svg" height="56" alt="Codex" title="Codex" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/agents/v2/agy.svg" height="56" alt="Antigravity" title="Antigravity (agy)" />
+</p>
+
+FlowKit's 36 skills (`skills/fk-*.md`) are plain Markdown recipes any AI coding
+agent can read and follow. Review providers are swappable at runtime
+(`agent/providers.json`, or `/fk-change-provider`) — no restart needed.
+
+| Agent | Skills | Video review provider |
+|-------|--------|----------------------|
+| **Muse** | Native — reads `skills/fk-*.md` directly, vision on files and contact sheets (`muse.read`) | `muse` (= the agent itself) — official opt-in self-review: no CLI, no model, no API key; score sheets by hand via `review-sheets` → `review-submit` |
+| **Claude Code** | Auto-loaded via `CLAUDE.md`, native `/fk-*` slash commands | `claude` — default `video_review` role |
+| **Codex CLI** | Reads `skills/fk-<name>.md` via `AGENTS.md`; vision on contact sheets for self-review | `codex` — OpenAI Codex CLI, or `muse` (= the agent itself) for hand scoring |
+| **agy** (Google Antigravity) | Reads skill files manually; vision on contact sheets for self-review | `agy` — Antigravity CLI, or `muse` (= the agent itself) for hand scoring |
+
 ## Showcase
 
 All outputs below were generated end-to-end by this system — from story concept to final YouTube-ready video with thumbnails, narration, and branding.
 
+### Full Video Demos
+
+<p align="center">
+  <a href="https://youtu.be/DNroTtRKyUM">
+    <img src="docs/images/thumbnail_f15e_rescue_play.jpg" width="400" alt="F-15E Pilot Rescue — 36 Hours Evading Behind Enemy Lines" />
+  </a>
+  <a href="https://youtu.be/KhCj_zjbSps">
+    <img src="docs/images/thumbnail_hormuz_play.jpg" width="400" alt="Hormuz Strait — US Navy vs 6 Iranian Attack Boats" />
+  </a>
+</p>
+<p align="center">
+  <a href="https://youtu.be/DNroTtRKyUM">▶️ <b>Watch: F-15E Pilot Rescue (36 Hours Evading)</b></a>
+  &nbsp;&nbsp;•&nbsp;&nbsp;
+  <a href="https://youtu.be/KhCj_zjbSps">▶️ <b>Watch: Hormuz Strait (US Navy vs 6 Attack Boats)</b></a>
+</p>
+
 ### Generated YouTube Thumbnails
 
 <p align="center">
-  <img src="docs/images/thumbnail_hormuz.jpg" width="400" alt="Hormuz Strait naval blockade thumbnail" />
-  <img src="docs/images/thumbnail_f15e_rescue.jpg" width="400" alt="F-15E pilot rescue thumbnail" />
+  <a href="https://youtu.be/KhCj_zjbSps"><img src="docs/images/thumbnail_hormuz.jpg" width="400" alt="Hormuz Strait naval blockade thumbnail" /></a>
+  <a href="https://youtu.be/DNroTtRKyUM"><img src="docs/images/thumbnail_f15e_rescue.jpg" width="400" alt="F-15E pilot rescue thumbnail" /></a>
 </p>
 <p align="center">
   <img src="docs/images/thumbnail_operation_resolve.jpg" width="400" alt="Operation Absolute Resolve thumbnail" />
@@ -95,7 +130,7 @@ The reference image system keeps characters consistent across an entire video. E
   <img src="docs/images/scene_f15e_survival.jpg" width="260" alt="Scene 20: Pilot surviving in mountains" />
 </p>
 
-<sub>Strategic briefing → pilot departure → formation flight → aircraft hit → CSAR alert → pilot survival.</sub>
+<sub>Strategic briefing → pilot departure → formation flight → aircraft hit → CSAR alert → pilot survival. • <a href="https://youtu.be/DNroTtRKyUM">Watch full video on YouTube ▶</a></sub>
 
 ### Hormuz Strait — Naval Scenes
 
@@ -107,6 +142,8 @@ The reference image system keeps characters consistent across an entire video. E
   <img src="docs/images/scene_hormuz_ciws.jpg" width="400" alt="CIWS engagement at sea" />
   <img src="docs/images/scene_hormuz_sunset.jpg" width="400" alt="Warship sailing into sunset" />
 </p>
+
+<sub>Iranian patrol boats → bridge alert → CIWS engagement → sunset patrol. • <a href="https://youtu.be/KhCj_zjbSps">Watch full video on YouTube ▶</a></sub>
 
 ### What the Pipeline Produces
 
@@ -229,6 +266,68 @@ You can also pass `flow_project_id` per project on `POST /api/projects`.
 | `FLOW_PROJECT_ID` | — | The Flow project every RPC is scoped to. Required. |
 | `FLOW_ALLOW_DEGRADED` | `0` | `1` lets scene chaining and r2v fall back to plain i2v instead of failing. |
 | `DEFAULT_PAYGATE_TIER` | `PAYGATE_TIER_TWO` | Carried for the DB and dashboard; no longer selects a model. |
+| `MEDIA_PROVIDER` | `flow` | `flow` (Google Flow via extension) or `assistant` (route all generation to the AI assistant). |
+| `ASSISTANT_PROVIDER_TIMEOUT_S` | `1800` | How long a request waits for a worker to complete its provider job before failing. |
+| `ASSISTANT_PROVIDER_POLL_S` | `15` | How often to poll the provider-job row while waiting for completion. |
+
+### Assistant Media Provider (`MEDIA_PROVIDER=assistant`)
+
+Routes every generation call — reference images, scene images, edits, i2v, r2v —
+to the AI assistant instead of Google Flow. No Chrome extension or Flow sign-in
+needed; the worker, skills, dashboard, and concat pipeline work unchanged.
+
+Protocol (persistent provider-job queue + HTTP API):
+
+1. Each request is inserted as a `QUEUED` row in the `provider_job` table with the
+   full prompt, orientation, input URLs (`source_url` for edits, `start_url`/`end_url`
+   for video, `extra.reference_urls` for reference images).
+2. An external worker (the assistant) long-polls
+   `GET /api/provider-jobs/wait-next?provider=assistant&worker_id=<id>`, claims the
+   job (lease granted), heartbeats while working, and finishes with
+   `POST /api/provider-jobs/{id}/complete` carrying
+   `{"worker_id": "<id>", "result": {"output_url": "<file:// or https:// URL>", "media_id": "<uuid>"}}`
+   (or `/fail` with `{"worker_id": "<id>", "error": "..."}`).
+   Only the lease holder may heartbeat/progress/complete/fail (409 otherwise);
+   complete/fail are idempotent for the holder.
+3. The provider mints a UUID `media_id` when the worker omits one and records the
+   output URL — the DB rows look identical to Flow-generated ones, so concat and
+   upload keep working. Expired leases are reclaimable, so crashed workers never
+   strand jobs.
+
+See `agent/worker/assistant_worker.py` for a reference worker implementing the
+worker side of the protocol. Video upscale is not supported on this provider and
+fails loudly.
+
+### Post-production (provider-neutral)
+
+Concat, finalize, and review work on clips from any provider — each clip is
+normalized to H.264/yuv420p + AAC before merging, so Flow and assistant clips
+can be mixed in one timeline.
+
+```bash
+# Merge scene clips in display_order; trim to the video's target_duration_s
+curl -X POST http://127.0.0.1:8100/api/videos/<VID>/concat \
+  -H "Content-Type: application/json" \
+  -d '{"orientation": "VERTICAL", "target_duration_s": 60}'
+
+# Concat + optional music/narration mix, marks the video COMPLETED
+curl -X POST http://127.0.0.1:8100/api/videos/<VID>/finalize \
+  -H "Content-Type: application/json" \
+  -d '{"orientation": "VERTICAL", "target_duration_s": 60,
+       "music_path": "/path/to/music.mp3", "narrate": true}'
+
+# Review scene videos, then auto-enqueue REGENERATE_VIDEO for bad scenes
+# (bounded: at most max_regenerations regen requests per scene, ever)
+curl -X POST http://127.0.0.1:8100/api/videos/<VID>/review-regenerate \
+  -H "Content-Type: application/json" \
+  -d '{"project_id": "<PID>", "mode": "light", "max_regenerations": 1}'
+```
+
+`target_duration_s` can also be stored on the video itself (`POST /api/videos`
+/ `PATCH /api/videos/<VID>`) — concat/finalize fall back to it when the
+request omits a target. Review accepts `file://` clip URLs directly, so
+assistant-provider output needs no download step; the Flow `get_media`
+fallback only runs when the extension is connected.
 
 ### Image API
 
@@ -514,7 +613,7 @@ Ready-to-use workflow recipes in `skills/` (also available as `/slash-commands` 
 |-------|-------------|
 | `/fk-review-video` | AI vision scoring of generated scene videos (quality, consistency, usability) — see [AI Vision Providers](#ai-vision-providers-video-review) below |
 | `/fk-review-board` | Visual scene-by-scene review board for feedback before locking a cut |
-| `/fk-change-provider` | View/switch the AI CLI, model and effort behind `/fk-review-video` |
+| `/fk-change-provider` | View/switch the reviewer (`muse` = the assistant itself, or an AI CLI), model and effort behind `/fk-review-video` |
 
 ### Reference
 
@@ -522,6 +621,7 @@ Ready-to-use workflow recipes in `skills/` (also available as `/slash-commands` 
 |-------|-------------|
 | `/fk-camera-guide` | Camera angles, movements, lighting, DOF for cinematic video prompts |
 | `/fk-thumbnail-guide` | Hook-worthy thumbnail design rules |
+| `/fk-provider` | Media providers: choose the generation backend (`flow`/`assistant`), run the assistant worker, troubleshoot provider jobs |
 
 ### TTS & Narration
 
@@ -557,12 +657,27 @@ Ready-to-use workflow recipes in `skills/` (also available as `/slash-commands` 
 | `/fk-dashboard` | Live status in the Claude Code statusline |
 | `/fk-doctor` | Diagnose any error (Flow API, extension, worker, YouTube) and prescribe a fix |
 
+### Muse Support
+
+Muse is a first-class FlowKit agent, not just another skill reader:
+
+- **Skills run natively** — no shelling out, no slash-command wiring.
+  Muse reads `skills/fk-*.md` and calls its own tools directly, including
+  vision on files (`muse.read` for contact sheets and images).
+- **`muse` is an official video-review provider** — no CLI, no model, no API
+  key. The key means "the agent itself": Muse, Codex, or agy scores review
+  contact sheets by hand with its own vision through
+  `POST .../review-sheets` → vision → `POST .../review-submit`
+  (see `/fk-review-video --by muse`). Opt in per role with
+  `/fk-change-provider set muse`; the default role stays on `claude`.
+
 ### AI CLI Compatibility (Skill Consumption)
 
 Skills are `.md` recipes any AI coding-assistant CLI can read and follow — this is about **which agent reads the skill files**, not which model does the work:
 
 | CLI | Instructions | How skills work |
 |-----|-------------|-----------------|
+| Muse | Skills auto-loaded | Native tool calls (`muse.read` for files/images) |
 | Claude Code | `CLAUDE.md` (auto-loaded) | Native `/fk-*` slash commands |
 | Codex CLI | `AGENTS.md` → reads `CLAUDE.md` | User says `/fk-<name>`, agent reads `skills/fk-<name>.md` |
 
@@ -573,18 +688,23 @@ that is configured in `agent/providers.json`, not by `setup.py`.
 
 ### AI Vision Providers (Video Review)
 
-Separate from the table above — this is about **which CLI backend does the vision analysis** for `/fk-review-video`. Three providers are supported and swappable at runtime, no restart required:
+Separate from the table above — this is about **which backend does the vision analysis** for `/fk-review-video`. Four reviewers are supported and swappable at runtime, no restart required:
 
 | Provider | Binary | Reasoning efforts | Model catalog | Setup |
 |----------|--------|-------------------|---------------|-------|
-| `claude` | Claude Code CLI | `low` `medium` `high` `xhigh` `max` | aliases (`sonnet`, `opus`, `haiku`, `fable`) or any full model name | Default — works out of the box |
+| `muse` | — (the assistant itself) | — | — | Official — Muse reads the contact sheets with its own vision via `POST .../review-sheets` → `POST .../review-submit`; no CLI, no API key. Opt in per role (`/fk-change-provider set muse`) |
+| `claude` | Claude Code CLI | `low` `medium` `high` `xhigh` `max` | aliases (`sonnet`, `opus`, `haiku`, `fable`) or any full model name | Install the CLI, sign in once |
 | `agy` | Google Antigravity CLI | `low` `medium` `high` | closed — `agy models` is the whole list and agy rejects anything else | Install separately, sign in once |
 | `codex` | OpenAI Codex CLI | `low` `medium` `high` `xhigh` `max` (varies per model) | codex's own on-disk cache, plus slugs newer than it | `npm install -g @openai/codex`, then `codex login` once |
 
-Provider, model and effort are set **per role** — a role being a job an AI CLI
+Provider, model and effort are set **per role** — a role being a job an AI
 does for Flow Kit. There is one today, `video_review`; the config is a map so
 the next one is an entry rather than a schema change. Model and effort may both
-be `null`, meaning "whatever that CLI defaults to".
+be `null`, meaning "whatever that backend defaults to". The `muse` reviewer
+takes no model or effort — it is Muse scoring contact sheets by hand, so
+pointing `video_review` at `muse` disables the CLI review endpoint (it
+answers 500 with directions) and the review flow becomes
+`review-sheets` → hand scoring → `review-submit`.
 
 **For `agy`, model and effort are mutually exclusive.** Its slugs name their own
 effort — `gemini-3.8-flash-low`, `gemini-3.1-pro-high` — so setting both is

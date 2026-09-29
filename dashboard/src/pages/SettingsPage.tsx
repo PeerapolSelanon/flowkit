@@ -152,7 +152,7 @@ export default function SettingsPage() {
                 <tr key={name}>
                   <td>
                     <span className="flex items-center gap-2 font-mono text-[12px]">
-                      {info.binary}
+                      {info.binary ?? name}
                       {name === data.active && <Pill state="brand">{t('settings.activeProvider')}</Pill>}
                     </span>
                   </td>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                 <span className="fk-label">{t('settings.field.agent')}</span>
                 <select value={draft.provider} onChange={e => changeProvider(roleId, e.target.value)} className="fk-select">
                   {Object.entries(providers).map(([name, p]) => (
-                    <option key={name} value={name} disabled={!p.installed}>{p.installed ? p.binary : `${p.binary} · ${t('settings.notInstalled')}`}</option>
+                    <option key={name} value={name} disabled={!p.installed}>{p.installed ? (p.binary ?? name) : `${p.binary} · ${t('settings.notInstalled')}`}</option>
                   ))}
                 </select>
                 {info && !info.installed && <span className="text-[11px] text-fail leading-snug">{t('settings.installHint', { binary: info.binary })}</span>}

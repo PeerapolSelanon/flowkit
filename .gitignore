@@ -28,3 +28,4 @@ extension/_metadata/
 scripts/logs/
 .agent/
 flow_session_project.json
+.venv/
